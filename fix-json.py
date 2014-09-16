@@ -11,11 +11,8 @@ newlines with spaces
 
 
 from __future__ import print_function
-from collections import defaultdict
 from os import path as fp
 import argparse
-import copy
-import itertools
 import glob
 import os
 import re
@@ -26,6 +23,7 @@ def fix_json(bad_str):
     Given file content as a string, return a fixed string
     """
     def norm_space(matchobj):
+        "replace all whitespace by single space"
         before = matchobj.group(0)
         after = " ".join(before.split())
         return after
