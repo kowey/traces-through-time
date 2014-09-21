@@ -10,6 +10,7 @@ from __future__ import print_function
 from collections import defaultdict
 from os import path as fp
 import argparse
+import codecs
 import copy
 import itertools
 import json
@@ -17,82 +18,265 @@ import glob
 import os
 import xml.etree.cElementTree as ET
 
+from html import XHTML
+
 # ---------------------------------------------------------------------
 # report format
 # ---------------------------------------------------------------------
 
 # columns to emit in the report
-_PRIMARY_COL = 'origOccurence'
+_PRIMARY_COL = 'origOccurrence'
 _DEFAULT_COLS = [_PRIMARY_COL,
                  'count',
-                 'firstname',
+                 'forename',
                  'surname',
-                 'gender',
-                 'title']
+                 'article',
+                 'title',
+                 'role',
+                 'provenance',
+                 'appearanceDate']
+
+# ---------------------------------------------------------------------
+# html helpers
+# ---------------------------------------------------------------------
 
 
-def _get_colnames(records):
+def _add_column(hrow, is_header, content):
+    """
+    Add a column to a row
+
+    Content can either be just a string, or a tuple
+    of string and HTML attributes
+    """
+    if isinstance(content, tuple):
+        text, attrs = content
+    else:
+        text = content
+        attrs = {}
+
+    if is_header:
+        hrow.th(text, **attrs)
+    else:
+        hrow.td(text, **attrs)
+
+
+def _add_row(table, headers, columns):
+    """
+    Add a row to an html table with a th cell for each
+    header and a td cell for each column.
+
+    The headers and columns could optionally be just
+    a string, or a tuple of string and attributes
+
+    Returns the row (which you could just ignore as this
+    mutates the table)
+    """
+    hrow = table.tr()
+    for col in headers:
+        _add_column(hrow, True, col)
+    for col in columns:
+        _add_column(hrow, False, col)
+    return hrow
+
+# ---------------------------------------------------------------------
+# overview
+# ---------------------------------------------------------------------
+
+
+def count(fun, xs):
+    """
+    (v -> int, [v]) -> int
+    """
+    return sum(map(fun, xs))
+
+
+def count_and_mean(fun, xs):
+    """
+    ((v -> int), [v]) -> (int, int)
+    """
+    total = count(fun, xs)
+    avg = float(total)/len(xs)
+    return (total, avg)
+
+
+_REPORT_CSS = """
+table { border: none; border-collapse: collapse; }
+table td { border-left: 1px solid #000; padding: 2px; }
+table th { border-left: 1px solid #000; }
+table td:first-child { border-left: none; }
+table th:first-child { border-left: none; }
+"""
+
+
+def _mk_overview(ofile, records,
+                 records_before=None):
+    """
+    Create an HTML report showing some useful numbers about
+    our data
+    """
+
+    htree = XHTML()
+    htree.head.meta.style(_REPORT_CSS)
+    hbody = htree.body
+
+    def _add_header(table):
+        "add a header to a count table"
+        cols = ['']
+        if records_before is not None:
+            cols.append('before total')
+        cols.append('after total')
+        if records_before is not None:
+            cols.append('before mean')
+        cols.append('after mean')
+        _add_row(table, cols, [])
+
+
+    def _add_stat(table, name, get_stat):
+        "add a statistic to a count table"
+        cols = [name]
+        sum_aft, avg_aft = count_and_mean(get_stat, records.values())
+        if records_before is not None:
+            sum_bef, avg_bef = count_and_mean(get_stat, records_before.values())
+        else:
+            sum_bef, avg_bef = -1, -1
+
+        if records_before is not None:
+            cols.append(unicode(sum_bef))
+        cols.append(unicode(sum_aft))
+
+        if records_before is not None:
+            cols.append(unicode(avg_bef))
+        cols.append(unicode(avg_aft))
+
+        _add_row(table, [], cols)
+
+
+    def get_num_attrs(items):
+        "number of non-empty values for a list of dictionaries"
+        non_empty = lambda d: len([v for v in d.values() if v])
+        return count(non_empty, items)
+
+
+    def get_num_instances(attr):
+        """
+        str -> [dict] -> int
+        number of times an attribute is non empty
+        """
+        def inner(items):
+            non_empty = lambda d: 1 if d.get(attr) else 0
+            return count(non_empty, items)
+        return inner
+
+
+    hbody.h2("reports")
+    rlist = hbody.ul
+    rlist.li.a("item by item report",
+               href="report.html")
+    rlist.li.a("per-file condensed report",
+               href="condensed.html")
+    rlist.li.a("fully condensed report",
+               href="single.html")
+
+
+    hbody.h2('general counts')
+    htotals = hbody.table
+    _add_header(htotals)
+    _add_stat(htotals, 'files', lambda _: 1)
+    _add_stat(htotals, 'records', len)
+    _add_stat(htotals, 'attributes', get_num_attrs)
+
+    hbody.h2('attributes')
+    hattrs = hbody.table
+    _add_header(hattrs)
+    attrs = _get_colnames(records, records_before=records_before,
+                          default=[])
+    for attr in attrs:
+        _add_stat(hattrs, attr, get_num_instances(attr))
+
+    with codecs.open(ofile, 'w', 'utf-8') as ofile:
+        print(htree, file=ofile)
+
+# ---------------------------------------------------------------------
+# tabular report
+# ---------------------------------------------------------------------
+
+
+def _get_colnames(records, records_before=None,
+                  default=None):
     """
     Return ordered list of attributes to print out as table columns
     """
-    keyset = set(_DEFAULT_COLS)
-    for _, record in records.iteritems():
+    default = _DEFAULT_COLS if default is None else default
+    keyset = set(default)
+    records_before = records_before or {}
+    for _, record in itertools.chain(records.iteritems(),
+                                     records_before.iteritems()):
         for subrecord in record:
             keyset.update(subrecord.keys())
-    return _DEFAULT_COLS +\
-        sorted(keyset - frozenset(_DEFAULT_COLS))
+
+    return default + sorted(keyset - frozenset(default))
+
+_BEFORE_STYLE = {'style':'color:grey;'}
 
 
-def _fill_header(colnames, htable):
-    """
-    Add table header row
-    """
-    hrow = ET.SubElement(htable, 'tr')
-    hcol = ET.SubElement(hrow, 'th')
-    hcol.text = 'file'
-    for col in colnames:
-        hcol = ET.SubElement(hrow, 'th')
-        hcol.text = col
-
-
-def _fill_columns(subrecord, colnames, hrow):
+def _add_report_row(colnames, htable, subrecord,
+                    filename=None,
+                    is_before=False):
     """
     Populate a row with elements from a record
     """
-    for colname in colnames:
-        hcol = ET.SubElement(hrow, 'td')
-        if colname in subrecord:
-            hcol.text = unicode(subrecord[colname])
+    if is_before:
+        mk_content = lambda t: (t, _BEFORE_STYLE)
+    else:
+        mk_content = lambda t: t
+
+    headers = [filename or ""]
+    columns = [mk_content(unicode(subrecord.get(c, "")))
+               for c in colnames]
+    _add_row(htable, headers, columns)
 
 
-def _add_rowset(filename, record, colnames, htable):
+def _add_rowset(filename, colnames, htable, record,
+                record_before=None):
     """
     Add rows to the table, one for each subrecord
     """
-    hrow = ET.SubElement(htable, 'tr')
-    hcol = ET.SubElement(hrow, 'th')
-    hcol.text = filename
-    if record:
-        _fill_columns(record[0], colnames, hrow)
-        for subrec in record[1:]:
-            hrow = ET.SubElement(htable, 'tr')
-            hcol = ET.SubElement(hrow, 'th')
-            _fill_columns(subrec, colnames, hrow)
+    record_after = record
+    if record_before:
+        _add_report_row(colnames, htable, record_before[0],
+                        filename=filename,
+                        is_before=True)
+        for subrec in record_before[1:]:
+            _add_report_row(colnames, htable, subrec,
+                            is_before=True)
+    elif record:
+        _add_report_row(colnames, htable, record[0])
+        record_after = record[1:]
+
+    for subrec in record_after:
+        _add_report_row(colnames, htable,  subrec)
 
 
-def _mk_report(records, ofile):
+def _mk_report(ofile, records,
+               records_before=None):
     """
     dictionary of records to html tree
     """
-    htree = ET.Element('html')
-    hbody = ET.SubElement(htree, 'body')
-    htable = ET.SubElement(hbody, 'table')
+    htree = XHTML()
+    htable = htree.body.table()
 
-    colnames = _get_colnames(records)
-    _fill_header(colnames, htable)
-    for fname in sorted(records):
-        _add_rowset(fname, records[fname], colnames, htable)
-    ET.ElementTree(htree).write(ofile)
+    colnames = _get_colnames(records, records_before)
+    _add_row(htable, ['file'] + colnames, [])
+    fnames = set(records.keys())
+    fnames = fnames | set(records_before.keys() if records_before else [])
+    for fname in sorted(fnames):
+        record_before = None if records_before is None\
+            else records_before.get(fname)
+        record_after = records.get(fname, [])
+        _add_rowset(fname, colnames, htable, record_after,
+                    record_before=record_before)
+    with codecs.open(ofile, 'w', 'utf-8') as ofile:
+        print(htree, file=ofile)
 
 # ---------------------------------------------------------------------
 # condensing
@@ -157,7 +341,9 @@ def _read_inputs(inputdir):
     for filename in glob.glob(fp.join(inputdir, '*')):
         with open(filename) as ifile:
             bname = fp.basename(filename)
-            records[bname] = json.load(ifile)
+            subrecs = json.load(ifile)
+            records[bname] = [subrecs]\
+                if isinstance(subrecs, dict) else subrecs
     return records
 
 
@@ -184,19 +370,46 @@ def main():
     psr = argparse.ArgumentParser(description='TTT converter')
     psr.add_argument('input', metavar='DIR', help='dir with json files')
     psr.add_argument('output', metavar='DIR', help='output directory')
+    psr.add_argument('--before', metavar='DIR',
+                     help='another dir with json files (for comparsion)')
     args = psr.parse_args()
     if not fp.exists(args.output):
         os.makedirs(args.output)
-    # just report each json object
-    records = _norm_records(_read_inputs(args.input))
-    _mk_report(records, fp.join(args.output, "report.html"))
-    # squash and sort within each file
-    crecords = _condense_records(records)
-    _mk_report(crecords, fp.join(args.output, "condensed.html"))
-    # squash and sort the whole thing
+
     bname = fp.basename(args.input)
+
+    # straightforward one row per json object
+    records = _norm_records(_read_inputs(args.input))
+    # squashed and sorted within each file
+    crecords = _condense_records(records)
+    # squashed and sorted altogether
     drecords = {bname: _supercondense_record(records)}
-    _mk_report(drecords, fp.join(args.output, "single.html"))
+
+    # if we're in diff mode
+    if args.before:
+        records_before = _norm_records(_read_inputs(args.before))
+        crecords_before = _condense_records(records_before)
+        #drecords_before = {bname: _supercondense_record(records_before)}
+        _mk_report(fp.join(args.output, "before.html"),
+                   records_before)
+    else:
+        records_before = None
+        crecords_before = None
+        #drecords_before = None
+
+
+    _mk_overview(fp.join(args.output, "index.html"),
+                 records,
+                 records_before=records_before)
+    _mk_report(fp.join(args.output, "report.html"),
+               records,
+               records_before=records_before)
+    _mk_report(fp.join(args.output, "condensed.html"),
+               crecords,
+               records_before=crecords_before)
+    _mk_report(fp.join(args.output, "single.html"),
+               drecords)
+               #records_before=drecords_before)
 
 
 main()

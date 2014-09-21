@@ -11,7 +11,9 @@ extraction results.
 
 ### Post-processing results
 
-* mk-report.py
+* mk-report.py (needs html package) - note that if you have two
+  directories of results, you can pass one in with the '--before'
+  flag to get a sort of informal regression report
 
 ### Miscellaneous
 
