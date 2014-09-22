@@ -18,6 +18,8 @@ extraction results.
 ### Miscellaneous
 
 * fix-json.py
+* filter-names.py - narrow done a list of candidate names to those
+  that look relatively likely to actually be names
 
 ## See also
 
