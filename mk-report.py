@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 """
 Given a directory of nimrodel json output files,
 produce an HTML report
@@ -16,7 +15,6 @@ import itertools
 import json
 import glob
 import os
-import xml.etree.cElementTree as ET
 
 from html import XHTML
 
@@ -54,10 +52,12 @@ def _add_column(hrow, is_header, content):
         text = content
         attrs = {}
 
+# pylint: disable=star-args
     if is_header:
         hrow.th(text, **attrs)
     else:
         hrow.td(text, **attrs)
+# pylint: enable=star-args
 
 
 def _add_row(table, headers, columns):
@@ -83,25 +83,26 @@ def _add_row(table, headers, columns):
 # ---------------------------------------------------------------------
 
 
-def count(fun, xs):
+def count(fun, items):
     """
     (v -> int, [v]) -> int
     """
-    return sum(map(fun, xs))
+    return sum(map(fun, items))
 
 
-def count_and_mean(fun, xs):
+def count_and_mean(fun, items):
     """
     ((v -> int), [v]) -> (int, int)
     """
-    total = count(fun, xs)
-    avg = float(total)/len(xs)
+    total = count(fun, items)
+    avg = float(total)/len(items)
     return (total, avg)
 
 
 _REPORT_CSS = """
 table { border: none; border-collapse: collapse; }
-table td { border-left: 1px solid #000; padding: 2px; }
+table td { border-left: 1px solid #000; padding: 2px;
+           text-align: right; }
 table th { border-left: 1px solid #000; }
 table td:first-child { border-left: none; }
 table th:first-child { border-left: none; }
@@ -145,8 +146,8 @@ def _mk_overview(ofile, records,
         cols.append(unicode(sum_aft))
 
         if records_before is not None:
-            cols.append(unicode(avg_bef))
-        cols.append(unicode(avg_aft))
+            cols.append("{:.4}".format(avg_bef))
+        cols.append("{:.4}".format(avg_aft))
 
         _add_row(table, [], cols)
 
@@ -163,20 +164,32 @@ def _mk_overview(ofile, records,
         number of times an attribute is non empty
         """
         def inner(items):
+            "[dict] -> int"
             non_empty = lambda d: 1 if d.get(attr) else 0
             return count(non_empty, items)
         return inner
 
 
+    def mk_report_block(rlist, descr, prefix):
+        """
+        append a bullet point to a list, pointing to
+        various subreports
+        """
+        item = rlist.li
+        item.a(descr, href=prefix+".html")
+        if records_before:
+            item.span(" (")
+            item.a("before", href=prefix+"-before.html")
+            item.span(" | ")
+            item.a("after", href=prefix+"-after.html")
+            item.span(")")
+
+
     hbody.h2("reports")
     rlist = hbody.ul
-    rlist.li.a("item by item report",
-               href="report.html")
-    rlist.li.a("per-file condensed report",
-               href="condensed.html")
-    rlist.li.a("fully condensed report",
-               href="single.html")
-
+    mk_report_block(rlist, "item by item", "report")
+    mk_report_block(rlist, "each file condensed", "condensed")
+    mk_report_block(rlist, "whole dir condensed", "single")
 
     hbody.h2('general counts')
     htotals = hbody.table
@@ -250,11 +263,12 @@ def _add_rowset(filename, colnames, htable, record,
             _add_report_row(colnames, htable, subrec,
                             is_before=True)
     elif record:
-        _add_report_row(colnames, htable, record[0])
+        _add_report_row(colnames, htable, record[0],
+                        filename=filename)
         record_after = record[1:]
 
     for subrec in record_after:
-        _add_report_row(colnames, htable,  subrec)
+        _add_report_row(colnames, htable, subrec)
 
 
 def _mk_report(ofile, records,
@@ -376,26 +390,36 @@ def main():
     if not fp.exists(args.output):
         os.makedirs(args.output)
 
-    bname = fp.basename(args.input)
-
     # straightforward one row per json object
     records = _norm_records(_read_inputs(args.input))
     # squashed and sorted within each file
     crecords = _condense_records(records)
     # squashed and sorted altogether
-    drecords = {bname: _supercondense_record(records)}
+    drecords = {fp.basename(args.input):
+                _supercondense_record(records)}
 
     # if we're in diff mode
     if args.before:
         records_before = _norm_records(_read_inputs(args.before))
         crecords_before = _condense_records(records_before)
-        #drecords_before = {bname: _supercondense_record(records_before)}
-        _mk_report(fp.join(args.output, "before.html"),
+        drecords_before = {fp.basename(args.before):
+                           _supercondense_record(records_before)}
+        _mk_report(fp.join(args.output, "report-before.html"),
                    records_before)
+        _mk_report(fp.join(args.output, "report-after.html"),
+                   records)
+        _mk_report(fp.join(args.output, "condensed-before.html"),
+                   crecords_before)
+        _mk_report(fp.join(args.output, "condensed-after.html"),
+                   crecords)
+        _mk_report(fp.join(args.output, "single-before.html"),
+                   drecords_before)
+        _mk_report(fp.join(args.output, "single-after.html"),
+                   drecords)
     else:
         records_before = None
         crecords_before = None
-        #drecords_before = None
+        drecords_before = None
 
 
     _mk_overview(fp.join(args.output, "index.html"),
@@ -408,8 +432,8 @@ def main():
                crecords,
                records_before=crecords_before)
     _mk_report(fp.join(args.output, "single.html"),
-               drecords)
-               #records_before=drecords_before)
+               drecords,
+               records_before=drecords_before)
 
 
 main()
