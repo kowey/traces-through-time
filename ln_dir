@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# hard link files from src dir to tgt dir, assuming flat structure
+# useful when there are many files
+
+if [ $# -ne 2 ]; then
+    echo >&2 "Usage: $0 src_dir tgt_dir"
+    exit 1
+fi
+
+SRC="$1"
+TGT="$2"
+
+mkdir -p "$TGT"
+find "$SRC" -type f -exec ln {} "$TGT" \;
