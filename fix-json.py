@@ -28,7 +28,10 @@ def fix_json(bad_str):
         after = " ".join(before.split())
         return after
     qt_re = re.compile(r'".*?"', flags=re.DOTALL)
-    return qt_re.sub(norm_space, bad_str)
+    res = bad_str
+    res = qt_re.sub(norm_space, res)
+    res = res.replace('origOccurence', 'origOccurrence')  # sigh
+    return res
 
 
 def main():
