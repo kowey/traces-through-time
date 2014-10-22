@@ -289,8 +289,8 @@ def _mk_report(ofile, records,
         record_after = records.get(fname, [])
         _add_rowset(fname, colnames, htable, record_after,
                     record_before=record_before)
-    with codecs.open(ofile, 'w', 'utf-8') as ofile:
-        print(htree, file=ofile)
+    with open(ofile, 'wb') as ofile:
+        ofile.write(unicode(htree).encode('utf-8'))
 
 # ---------------------------------------------------------------------
 # condensing
