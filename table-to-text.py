@@ -20,6 +20,8 @@ import os
 import re
 import xml.etree.ElementTree as ET
 
+from ttt.date import read_date
+
 _OTHER_ENTITIES = {'emacr': 275,
                    'utilde': 361}
 
@@ -95,7 +97,10 @@ def _doc_to_text(xml):
 
 def convert(ifile):
     """
-    Return string representation of the tabular content in the file
+    Return a tuple of
+
+    * string representation of the tabular content in the file
+    * date string in its header
     """
     # The data is actually iso-8859-1 converted but it
     # contains entities which are defined elsewhere,
@@ -109,7 +114,9 @@ def convert(ifile):
     with codecs.open(ifile, 'r', 'iso-8859-1') as fin:
         utext = unescape(fin.read()).encode('utf-8')
         tree = ET.fromstringlist([utext], parser=parser)
-        return _doc_to_text(tree)
+        date_nodes = [n.text for n in tree.iter('head')]
+        date_str = read_date(date_nodes[0]) if date_nodes else 'unknown'
+        return _doc_to_text(tree), date_str
 
 
 def main():
@@ -120,12 +127,21 @@ def main():
     psr.add_argument('input', metavar='DIR', help='dir with xml files')
     psr.add_argument('output', metavar='DIR', help='output directory')
     args = psr.parse_args()
-    if not fp.exists(args.output):
-        os.makedirs(args.output)
+    text_dir = fp.join(args.output, "text")
+    date_dir = fp.join(args.output, "dates")
+    if not fp.exists(text_dir):
+        os.makedirs(text_dir)
+    if not fp.exists(date_dir):
+        os.makedirs(date_dir)
     for ifile in glob.glob(fp.join(args.input, '*.xml')):
+        str_content, date_str = convert(ifile)
         bname = fp.basename(ifile)
-        ofile = fp.join(args.output, fp.splitext(bname)[0] + ".txt")
-        with codecs.open(ofile, 'w', 'utf-8') as fout:
-            print(convert(ifile), file=fout)
+        tfile = fp.join(text_dir, fp.splitext(bname)[0] + ".txt")
+        with codecs.open(tfile, 'w', 'utf-8') as fout:
+            print(str_content, file=fout)
+        dfile = fp.join(date_dir, fp.splitext(bname)[0] + ".txt")
+        with codecs.open(dfile, 'w', 'utf-8') as fout:
+            print(date_str, file=fout)
+
 
 main()
