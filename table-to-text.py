@@ -115,7 +115,10 @@ def _clean_date(dstr):
     if dstr.startswith("Feb. 30"):
         return "Feb"
     else:
-        return re.sub(r"Undated[^0-9]*", "", dstr)
+        res = dstr
+        res = re.sub(r"Undated[^0-9]*", "", res)
+        res = re.sub(r"\[(.*)\]", r"\1", res)
+        return res
 
 
 def _convert_section(xml):
