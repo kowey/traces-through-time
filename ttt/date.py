@@ -11,8 +11,9 @@ import datetime
 import itertools
 
 
-_DEFAULT_DATE_1 = datetime.datetime(3000, 1, 1)
-_DEFAULT_DATE_2 = datetime.datetime(3000, 2, 15)
+_FAR_AWAY = 9999
+_DEFAULT_DATE_1 = datetime.datetime(_FAR_AWAY, 1, 1)
+_DEFAULT_DATE_2 = datetime.datetime(_FAR_AWAY, 2, 15)
 
 
 def read_date(dstr):
@@ -49,9 +50,15 @@ def read_date(dstr):
                                             zip(parts1, parts2)))
 
 
-    stamp1 = dparse(dstr, default=_DEFAULT_DATE_1)
+    try:
+        stamp1 = dparse(dstr, default=_DEFAULT_DATE_1)
+    except TypeError as _:
+        return None
     stamp2 = dparse(dstr, default=_DEFAULT_DATE_2)
     if not stamp1:
         return None
 
-    return common_prefix(iso(stamp1), iso(stamp2))
+    res = common_prefix(iso(stamp1), iso(stamp2))
+    if res == str(_FAR_AWAY):
+        res = None
+    return res
