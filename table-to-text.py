@@ -15,7 +15,7 @@ import argparse
 import codecs
 import glob
 import htmlentitydefs
-import itertools
+import math
 import os
 import re
 import xml.etree.ElementTree as ET
@@ -76,31 +76,49 @@ def _column_to_text(xml):
     return "".join(xml.itertext())
 
 
-def _row_to_text(xml):
+def _convert_row(doc_date, xml):
     """
-    string representation of table row; all columns separated by lines
+    Given a default date (for the whole document) and a (date, entry)
+    row, return
+
+    * a (partial) iso string for the date
+    * the text for the entry
     """
-    columns = itertools.chain(xml.iter('th'), xml.iter('td'))
-    return "\n".join(map(_column_to_text, columns))
+    ths = list(xml.iter('th'))
+    tds = list(xml.iter('td'))
+    if len(ths) < 1 or len(tds) < 1:
+        return None
+    elif len(ths) > 1:
+        ET.dump(xml)
+        raise Exception("Did not expect more than one th node")
+    elif len(tds) > 1:
+        ET.dump(xml)
+        raise Exception("Did not expect more than one td node")
+
+    columns = ths + tds
+    th_text = ths[0].text or ""
+    # This is surely a (one time) typo for Feb 20, but I'm not chancing
+    # it. In any case, it (rightly) confuses the date parser
+    if th_text and th_text.startswith("Feb. 30"):
+        th_text = "Feb"
+    date = read_date(th_text, prefix=doc_date, fuzzy=True) # or doc_date
+    text = "\n".join(map(_column_to_text, columns))
+    return date, text
 
 
-def _doc_to_text(xml):
+def _convert_doc(doc_date, xml):
     """
     string representation of entire document
     (WARNING: mutates the tree)
     """
     for br_node in xml.iter('br'):
         br_node.text = "\n"
-    rows = map(_row_to_text, xml.iter('tr'))
-    return "\n\n".join(rows)
+    return [_convert_row(doc_date, r) for r in xml.iter('tr')]
 
 
 def convert(ifile):
     """
-    Return a tuple of
-
-    * string representation of the tabular content in the file
-    * date string in its header
+    Return a list of date, string tuples for each row in the table
     """
     # The data is actually iso-8859-1 converted but it
     # contains entities which are defined elsewhere,
@@ -116,7 +134,24 @@ def convert(ifile):
         tree = ET.fromstringlist([utext], parser=parser)
         date_nodes = [n.text for n in tree.iter('head')]
         date_str = read_date(date_nodes[0]) if date_nodes else 'unknown'
-        return _doc_to_text(tree), date_str
+        return _convert_doc(date_str, tree)
+
+
+def _do_file(text_dir, ifile):
+    """
+    Write converted output for a given file
+    """
+    rows = convert(ifile)
+    if not rows:
+        return
+    zwidth = int(math.floor(math.log10(len(rows)))) + 1
+    for i, row in enumerate(x for x in rows if x):
+        bname = fp.basename(ifile)
+        tbase = "{prefix}-{row}".format(prefix=fp.splitext(bname)[0],
+                                        row=str(i).zfill(zwidth))
+        tfile = fp.join(text_dir, tbase)
+        with codecs.open(tfile, 'w', 'utf-8') as fout:
+            print("\n\n".join(x for x in row if x), file=fout)
 
 
 def main():
@@ -127,21 +162,11 @@ def main():
     psr.add_argument('input', metavar='DIR', help='dir with xml files')
     psr.add_argument('output', metavar='DIR', help='output directory')
     args = psr.parse_args()
-    text_dir = fp.join(args.output, "text")
-    date_dir = fp.join(args.output, "dates")
+    text_dir = fp.join(args.output)
     if not fp.exists(text_dir):
         os.makedirs(text_dir)
-    if not fp.exists(date_dir):
-        os.makedirs(date_dir)
     for ifile in glob.glob(fp.join(args.input, '*.xml')):
-        str_content, date_str = convert(ifile)
-        bname = fp.basename(ifile)
-        tfile = fp.join(text_dir, fp.splitext(bname)[0] + ".txt")
-        with codecs.open(tfile, 'w', 'utf-8') as fout:
-            print(str_content, file=fout)
-        dfile = fp.join(date_dir, fp.splitext(bname)[0] + ".txt")
-        with codecs.open(dfile, 'w', 'utf-8') as fout:
-            print(date_str, file=fout)
+        _do_file(text_dir, ifile)
 
 
 main()
