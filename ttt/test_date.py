@@ -10,9 +10,9 @@ from ttt.date import read_date
 class DateTest(unittest.TestCase):
     "tests for ttt.date"
 
-    def assertDateEqual(self, expected, dstr, prefix=None):
+    def assertDateEqual(self, expected, dstr, **kwargs):
         "assert that date string parses as expected"
-        self.assertEqual(expected, read_date(dstr, prefix=prefix))
+        self.assertEqual(expected, read_date(dstr, **kwargs))
 
     def test_read_date_junk(self):
         "reject junk strings"
@@ -32,3 +32,8 @@ class DateTest(unittest.TestCase):
         "defaults mechanism"
         self.assertDateEqual("1521-07", "July", prefix="1521")
         self.assertDateEqual("1521-07-14", "14 July", prefix="1521")
+
+    def test_fuzzy(self):
+        "robustness with junk"
+        self.assertDateEqual(None, "Feb. (?)", prefix="1497")
+        self.assertDateEqual("1497-02", "Feb. (?)", prefix="1497", fuzzy=True)

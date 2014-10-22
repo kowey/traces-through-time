@@ -16,7 +16,7 @@ _DEFAULT_DATE_1 = datetime.datetime(_FAR_AWAY, 1, 1)
 _DEFAULT_DATE_2 = datetime.datetime(_FAR_AWAY, 2, 15)
 
 
-def read_date(dstr, prefix=None):
+def read_date(dstr, prefix=None, **kwargs):
     """
     type: `String -> String`
 
@@ -31,6 +31,8 @@ def read_date(dstr, prefix=None):
     partial date representation showing only as much of the date as we
     know the granularity for. (If you supply a prefix, it will be used
     to provide a partial default for unknown values)
+
+    Note that we also accept dateutil.parse args (`fuzzy` may be of use)
 
     The underlying implementation is a bit embarassing. We're using an
     English date parser that only returns timestamps (you have to supply
@@ -63,8 +65,8 @@ def read_date(dstr, prefix=None):
         default2 = _DEFAULT_DATE_2
 
     try:
-        stamp1 = dparse(dstr, default=default1)
-        stamp2 = dparse(dstr, default=default2)
+        stamp1 = dparse(dstr, default=default1, **kwargs)
+        stamp2 = dparse(dstr, default=default2, **kwargs)
     except TypeError as _:
         return None
 
