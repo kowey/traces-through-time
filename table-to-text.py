@@ -15,6 +15,7 @@ import argparse
 import codecs
 import glob
 import htmlentitydefs
+import itertools
 import math
 import os
 import re
@@ -86,34 +87,34 @@ def _convert_row(doc_date, xml):
     """
     ths = list(xml.iter('th'))
     tds = list(xml.iter('td'))
-    if len(ths) < 1 or len(tds) < 1:
-        return None
+    if len(ths) < 1:
+        date = None
     elif len(ths) > 1:
         ET.dump(xml)
         raise Exception("Did not expect more than one th node")
-    elif len(tds) > 1:
-        ET.dump(xml)
-        raise Exception("Did not expect more than one td node")
+    else:
+        th_text = ths[0].text or ""
+        # This is surely a (one time) typo for Feb 20, but I'm not chancing
+        # it. In any case, it (rightly) confuses the date parser
+        if th_text and th_text.startswith("Feb. 30"):
+            th_text = "Feb"
+        date = read_date(th_text, prefix=doc_date, fuzzy=True) # or doc_date
 
     columns = ths + tds
-    th_text = ths[0].text or ""
-    # This is surely a (one time) typo for Feb 20, but I'm not chancing
-    # it. In any case, it (rightly) confuses the date parser
-    if th_text and th_text.startswith("Feb. 30"):
-        th_text = "Feb"
-    date = read_date(th_text, prefix=doc_date, fuzzy=True) # or doc_date
     text = "\n".join(map(_column_to_text, columns))
     return date, text
 
 
-def _convert_doc(doc_date, xml):
+def _convert_section(xml):
     """
     string representation of entire document
     (WARNING: mutates the tree)
     """
+    dates = [d for d in [read_date(x.text) for x in xml.iter('head')] if d]
+    section_date = dates[0] if dates else None
     for br_node in xml.iter('br'):
         br_node.text = "\n"
-    return [_convert_row(doc_date, r) for r in xml.iter('tr')]
+    return [_convert_row(section_date, r) for r in xml.iter('tr')]
 
 
 def convert(ifile):
@@ -128,20 +129,26 @@ def convert(ifile):
     # XML parser
     #
     # Is there a cleaner way to do this?
+    concat_map = lambda f, x: list(itertools.chain.from_iterable(map(f, x)))
     parser = ET.XMLParser(encoding='utf-8')
     with codecs.open(ifile, 'r', 'iso-8859-1') as fin:
         utext = unescape(fin.read()).encode('utf-8')
         tree = ET.fromstringlist([utext], parser=parser)
-        date_nodes = [n.text for n in tree.iter('head')]
-        date_str = read_date(date_nodes[0]) if date_nodes else 'unknown'
-        return _convert_doc(date_str, tree)
+        return concat_map(_convert_section, tree.findall('section'))
+
+
+def _non_empty(row):
+    """
+    Return non-empty row components
+    """
+    return [x for x in row if x] if row else []
 
 
 def _do_file(text_dir, ifile):
     """
     Write converted output for a given file
     """
-    rows = convert(ifile)
+    rows = list(map(_non_empty, convert(ifile)))
     if not rows:
         return
     zwidth = int(math.floor(math.log10(len(rows)))) + 1
@@ -151,7 +158,7 @@ def _do_file(text_dir, ifile):
                                         row=str(i).zfill(zwidth))
         tfile = fp.join(text_dir, tbase)
         with codecs.open(tfile, 'w', 'utf-8') as fout:
-            print("\n\n".join(x for x in row if x), file=fout)
+            print("\n\n".join(row), file=fout)
 
 
 def main():
