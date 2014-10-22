@@ -88,7 +88,7 @@ def _convert_row(doc_date, xml):
     ths = list(xml.iter('th'))
     tds = list(xml.iter('td'))
     if len(ths) < 1:
-        date = doc_date
+        date = None
     elif len(ths) > 1:
         ET.dump(xml)
         raise Exception("Did not expect more than one th node")
@@ -98,7 +98,10 @@ def _convert_row(doc_date, xml):
 
     columns = ths + tds
     text = "\n".join(map(_column_to_text, columns))
-    return date, text
+    if text:
+        return date or doc_date, text
+    else:
+        return None
 
 
 def _clean_date(dstr):
