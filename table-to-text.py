@@ -88,16 +88,12 @@ def _convert_row(doc_date, xml):
     ths = list(xml.iter('th'))
     tds = list(xml.iter('td'))
     if len(ths) < 1:
-        date = None
+        date = doc_date
     elif len(ths) > 1:
         ET.dump(xml)
         raise Exception("Did not expect more than one th node")
     else:
-        th_text = ths[0].text or ""
-        # This is surely a (one time) typo for Feb 20, but I'm not chancing
-        # it. In any case, it (rightly) confuses the date parser
-        if th_text and th_text.startswith("Feb. 30"):
-            th_text = "Feb"
+        th_text = _clean_date(ths[0].text or "")
         date = read_date(th_text, prefix=doc_date, fuzzy=True) # or doc_date
 
     columns = ths + tds
@@ -105,12 +101,29 @@ def _convert_row(doc_date, xml):
     return date, text
 
 
+def _clean_date(dstr):
+    """
+    ad-hoc data-specific date cleaning
+    """
+    if not dstr:
+        return ""
+    # This is surely a (one time) typo for Feb 20, but I'm not chancing
+    # it. In any case, it (rightly) confuses the date parser
+    if dstr.startswith("Feb. 30"):
+        return "Feb"
+    else:
+        return re.sub(r"Undated[^0-9]*", "", dstr)
+
+
 def _convert_section(xml):
     """
     string representation of entire document
     (WARNING: mutates the tree)
     """
-    dates = [d for d in [read_date(x.text) for x in xml.iter('head')] if d]
+
+    some = lambda l: [x for x in l if x is not None]
+    dates = some(read_date(_clean_date(x.text))
+                 for x in xml.iter('head'))
     section_date = dates[0] if dates else None
     for br_node in xml.iter('br'):
         br_node.text = "\n"
