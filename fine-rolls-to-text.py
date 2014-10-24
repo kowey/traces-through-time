@@ -55,8 +55,11 @@ def _write_items(tree, oprefix):
         if node_id.startswith("r"):
             continue
         ofilename = "_".join([oprefix, node_id])
+        dates = [x.attrib['value'] for x in node.iter('date')]
+        body = "\n".join(node.itertext())
+        text = "\n\n".join(dates[:1] + [body])
         with codecs.open(ofilename, 'w', 'utf-8') as ofile:
-            print('\n'.join(node.itertext()), file=ofile)
+            print(text, file=ofile)
 
 
 def convert(ifile, odir):
