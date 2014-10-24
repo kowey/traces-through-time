@@ -71,7 +71,9 @@ def convert(ifile, odir):
         tree = ET.fromstringlist([utext], parser=parser)
         _remove_boring_parts(tree)
         oprefix = fp.join(odir, prefix)
-        _write_items(tree, oprefix)
+        if not fp.exists(oprefix):
+            os.makedirs(oprefix)
+        _write_items(tree, fp.join(oprefix, prefix))
         #ET.ElementTree(tree).write(oprefix + ".xml",
         #                           encoding='utf-8')
 
@@ -84,8 +86,6 @@ def main():
     psr.add_argument('input', metavar='DIR', help='dir with xml files')
     psr.add_argument('output', metavar='DIR', help='output directory')
     args = psr.parse_args()
-    if not fp.exists(args.output):
-        os.makedirs(args.output)
     for ifile in glob.glob(fp.join(args.input, 'roll*.xml')):
         convert(ifile, args.output)
 

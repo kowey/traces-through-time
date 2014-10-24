@@ -175,7 +175,10 @@ def _do_file(text_dir, ifile):
         bname = fp.basename(ifile)
         tbase = "{prefix}-{row}".format(prefix=fp.splitext(bname)[0],
                                         row=str(i).zfill(zwidth))
-        tfile = fp.join(text_dir, tbase)
+        odir = fp.join(text_dir, tbase)
+        if not fp.exists(odir):
+            os.makedirs(odir)
+        tfile = fp.join(odir, tbase)
         with codecs.open(tfile, 'w', 'utf-8') as fout:
             print("\n\n".join(row), file=fout)
 
@@ -189,8 +192,6 @@ def main():
     psr.add_argument('output', metavar='DIR', help='output directory')
     args = psr.parse_args()
     text_dir = fp.join(args.output)
-    if not fp.exists(text_dir):
-        os.makedirs(text_dir)
     for ifile in glob.glob(fp.join(args.input, '*.xml')):
         _do_file(text_dir, ifile)
 
