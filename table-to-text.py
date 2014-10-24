@@ -172,10 +172,10 @@ def _do_file(text_dir, ifile):
         return
     zwidth = int(math.floor(math.log10(len(rows)))) + 1
     for i, row in enumerate(x for x in rows if x):
-        bname = fp.basename(ifile)
-        tbase = "{prefix}-{row}".format(prefix=fp.splitext(bname)[0],
+        bname = fp.splitext(fp.basename(ifile))[0]
+        odir = fp.join(text_dir, bname)
+        tbase = "{prefix}-{row}".format(prefix=bname,
                                         row=str(i).zfill(zwidth))
-        odir = fp.join(text_dir, tbase)
         if not fp.exists(odir):
             os.makedirs(odir)
         tfile = fp.join(odir, tbase)
