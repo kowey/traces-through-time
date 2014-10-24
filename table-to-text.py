@@ -173,7 +173,7 @@ def _do_file(text_dir, ifile):
     zwidth = int(math.floor(math.log10(len(rows)))) + 1
     for i, row in enumerate(x for x in rows if x):
         bname = fp.splitext(fp.basename(ifile))[0]
-        odir = fp.join(text_dir, bname)
+        odir = fp.join(text_dir, bname[:4])
         tbase = "{prefix}-{row}".format(prefix=bname,
                                         row=str(i).zfill(zwidth))
         if not fp.exists(odir):
