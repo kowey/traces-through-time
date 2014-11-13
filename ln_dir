@@ -11,5 +11,10 @@ fi
 SRC="$1"
 TGT="$2"
 
-mkdir -p "$TGT"
-find "$SRC" -type f -exec ln {} "$TGT" \;
+pushd "$TGT" > /dev/null
+ABS_TGT="$PWD"
+popd > /dev/null
+
+cd "$SRC"
+find . -type d -exec mkdir -p "$ABS_TGT"/{} \;
+find . -type f -exec ln {} "$ABS_TGT"/{} \;
