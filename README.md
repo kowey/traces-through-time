@@ -6,7 +6,11 @@ extraction results.
 
 ### Input to text
 
-* table-to-text.py
+Note that in data distributions, you may see the names 'kleanthi'
+and 'calendar' floating around.  Files with such names should have
+been renamed to 'state-papers' and 'fine-rolls' respectively
+
+* state-papers-to-text.py
 * fine-rolls-to-text.py
 
 ### Post-processing results
