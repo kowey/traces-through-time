@@ -387,7 +387,7 @@ def _condense_helper(subrecs):
             pass
         elif not has_date_range:
             subrec[_DATE_COL] = list(sdates)[0]
-        elif len(sdates) > 1:
+        else:
             subrec[_DATE_COL_MIN] = min(sdates)
             subrec[_DATE_COL_MAX] = max(sdates)
             if _DATE_COL in subrec:
