@@ -26,6 +26,9 @@ from html import XHTML
 # columns to emit in the report
 _PRIMARY_COL = 'origOccurrence'
 _DATE_COL = 'appearanceDate'
+_DATE_COL_MIN = 'appearanceDate (min)'
+_DATE_COL_MAX = 'appearanceDate (max)'
+
 
 _DEFAULT_COLS = [_PRIMARY_COL,
                  'count',
@@ -34,9 +37,11 @@ _DEFAULT_COLS = [_PRIMARY_COL,
                  'article',
                  'title',
                  'role',
-                 'provenance',
-                 _DATE_COL]
+                 'provenance']
 
+_OPTIONAL_COLS = [_DATE_COL,
+                  _DATE_COL_MIN,
+                  _DATE_COL_MAX]
 
 # ---------------------------------------------------------------------
 # html helpers
@@ -258,7 +263,9 @@ def _get_colnames(records, records_before=None,
         for subrecord in record:
             keyset.update(subrecord.keys())
 
-    return default + sorted(keyset - frozenset(default))
+    optional = [x for x in _OPTIONAL_COLS if x in keyset]
+    remainder = sorted(keyset - frozenset(default) - frozenset(optional))
+    return default + optional + remainder
 
 _BEFORE_STYLE = {'style':'color:grey;'}
 
@@ -369,16 +376,22 @@ def _condense_helper(subrecs):
         date = subrec2.get(_DATE_COL)
         if date is not None:
             dates[key].add(date)
+
+    has_date_range = any(dates.values())
+
     for subrec in subrecs2:
         key = _subrec_key(subrec)
         subrec['count'] = counts[key]
         sdates = dates.get(key)
         if sdates is None:
             pass
-        elif len(sdates) == 1:
+        elif not has_date_range:
             subrec[_DATE_COL] = list(sdates)[0]
         elif len(sdates) > 1:
-            subrec[_DATE_COL] = min(sdates) + "/" + max(sdates)
+            subrec[_DATE_COL_MIN] = min(sdates)
+            subrec[_DATE_COL_MAX] = max(sdates)
+            if _DATE_COL in subrec:
+                del subrec[_DATE_COL]
     return subrecs2
 
 
