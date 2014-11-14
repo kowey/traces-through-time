@@ -12,6 +12,6 @@ OUTPUT_DIR=$2
 
 mkdir -p "$OUTPUT_DIR"
 for i in "$INPUT_DIR"/*.doc; do
-    bname=$(basename "$i")
-    antiword -x db "$i" > "$OUTPUT_DIR"/"$bname"
+    bname=$(basename "$i" .doc)
+    antiword -x db "$i" > "$OUTPUT_DIR"/"$bname.xml"
 done
