@@ -12,6 +12,8 @@ been renamed to 'state-papers' and 'fine-rolls' respectively
 
 * state-papers-to-text.py
 * fine-rolls-to-text.py
+* petitions-to-text.py
+
 
 ### Post-processing results
 
