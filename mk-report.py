@@ -15,6 +15,7 @@ import itertools
 import json
 import glob
 import os
+import shutil
 
 from html import XHTML
 
@@ -40,6 +41,20 @@ _DEFAULT_COLS = [_PRIMARY_COL,
 # ---------------------------------------------------------------------
 # html helpers
 # ---------------------------------------------------------------------
+
+
+def _add_report_table(hbody, fill_head=None):
+    """
+    Add a sortable report table; return its body
+
+    If you supply a fill_head function, it will be
+    used to populate the table's thead element with
+    headers
+    """
+    table = hbody.table(klass="tablesorter report_table")
+    if fill_head is not None:
+        fill_head(table.thead)
+    return table.tbody
 
 
 def _add_column(hrow, is_header, content):
@@ -98,18 +113,31 @@ def count_and_mean(fun, items):
     ((v -> int), [v]) -> (int, int)
     """
     total = count(fun, items)
-    avg = float(total)/len(items)
+    avg = float(total)/len(items) if items else 0.0
     return (total, avg)
 
 
-_REPORT_CSS = """
-table { border: none; border-collapse: collapse; }
-table td { border-left: 1px solid #000; padding: 2px;
-           text-align: right; }
-table th { border-left: 1px solid #000; }
-table td:first-child { border-left: none; }
-table th:first-child { border-left: none; }
+_REPORT_CSS = ""
+
+_SORTER_SCRIPT = """
+$(document).ready(function()
+    {
+        $(".report_table").tablesorter();
+    }
+);
 """
+
+def _add_includes(hhead):
+    """
+    Add javascript/css includes to the report
+    """
+    for scriptfile in glob.glob('js/*.js'):
+        hhead.script(type="text/javascript",
+                     src=unicode(scriptfile))
+    for stylefile in glob.glob('css/*.css'):
+        hhead.link(rel="stylesheet", type="text/css",
+                   href=unicode(stylefile))
+    hhead.script(_SORTER_SCRIPT)
 
 
 def _mk_overview(ofile, records,
@@ -120,10 +148,12 @@ def _mk_overview(ofile, records,
     """
 
     htree = XHTML()
-    htree.head.meta.style(_REPORT_CSS)
+    hhead = htree.head
+    _add_includes(hhead)
+    hhead.meta.style(_REPORT_CSS)
     hbody = htree.body
 
-    def _add_header(table):
+    def _add_header(thead):
         "add a header to a count table"
         cols = ['']
         if records_before is not None:
@@ -132,7 +162,7 @@ def _mk_overview(ofile, records,
         if records_before is not None:
             cols.append('before mean')
         cols.append('after mean')
-        _add_row(table, cols, [])
+        _add_row(thead, cols, [])
 
 
     def _add_stat(table, name, get_stat):
@@ -195,15 +225,13 @@ def _mk_overview(ofile, records,
     mk_report_block(rlist, "whole dir condensed", "single")
 
     hbody.h2('general counts')
-    htotals = hbody.table
-    _add_header(htotals)
+    htotals = _add_report_table(hbody, fill_head=_add_header)
     _add_stat(htotals, 'files', lambda _: 1)
     _add_stat(htotals, 'records', len)
     _add_stat(htotals, 'attributes', get_num_attrs)
 
     hbody.h2('attributes')
-    hattrs = hbody.table
-    _add_header(hattrs)
+    hattrs = _add_report_table(hbody, fill_head=_add_header)
     attrs = _get_colnames(records, records_before=records_before,
                           default=[])
     for attr in attrs:
@@ -280,10 +308,13 @@ def _mk_report(ofile, records,
     dictionary of records to html tree
     """
     htree = XHTML()
-    htable = htree.body.table()
+    _add_includes(htree)
 
     colnames = _get_colnames(records, records_before)
-    _add_row(htable, ['file'] + colnames, [])
+    mkcols = lambda h: _add_row(h, ['file'] + colnames, [])
+    htable = _add_report_table(htree.body,
+                               fill_head=mkcols)
+
     fnames = set(records.keys())
     fnames = fnames | set(records_before.keys() if records_before else [])
     for fname in sorted(fnames):
@@ -294,6 +325,16 @@ def _mk_report(ofile, records,
                     record_before=record_before)
     with open(ofile, 'wb') as ofile:
         ofile.write(unicode(htree).encode('utf-8'))
+
+
+def _copy_includes(odir):
+    "copy the javascript/css files to output dir"
+
+    for src in ['js', 'css']:
+        dst = fp.join(odir, src)
+        if not fp.exists(dst):
+            shutil.copytree(src, dst)
+
 
 # ---------------------------------------------------------------------
 # condensing
@@ -419,6 +460,7 @@ def main():
     drecords = {fp.basename(args.input):
                 _supercondense_record(records)}
 
+    _copy_includes(args.output)
     # if we're in diff mode
     if args.before:
         records_before = _norm_records(_read_inputs(args.before))
