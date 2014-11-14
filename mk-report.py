@@ -24,6 +24,8 @@ from html import XHTML
 
 # columns to emit in the report
 _PRIMARY_COL = 'origOccurrence'
+_DATE_COL = 'appearanceDate'
+
 _DEFAULT_COLS = [_PRIMARY_COL,
                  'count',
                  'forename',
@@ -32,7 +34,8 @@ _DEFAULT_COLS = [_PRIMARY_COL,
                  'title',
                  'role',
                  'provenance',
-                 'appearanceDate']
+                 _DATE_COL]
+
 
 # ---------------------------------------------------------------------
 # html helpers
@@ -301,7 +304,12 @@ def _subrec_key(subrec):
     """
     Hashabel representation of a subrecord
     """
-    return tuple(sorted(subrec.items()))
+    def tweak(pair):
+        "adjust key values pairs"
+        k, v = pair
+        return (k, "-") if k == _DATE_COL else pair
+
+    return tuple(sorted(map(tweak, subrec.items())))
 
 
 def _condense_helper(subrecs):
@@ -309,6 +317,7 @@ def _condense_helper(subrecs):
     count the instances of a subrecord within a record
     """
     counts = defaultdict(int)
+    dates = defaultdict(set)
     subrecs2 = []
     for subrec in subrecs:
         key = _subrec_key(subrec)
@@ -316,8 +325,19 @@ def _condense_helper(subrecs):
             subrec2 = copy.copy(subrec)
             subrecs2.append(subrec2)
         counts[key] += 1
+        date = subrec2.get(_DATE_COL)
+        if date is not None:
+            dates[key].add(date)
     for subrec in subrecs2:
-        subrec['count'] = counts[_subrec_key(subrec)]
+        key = _subrec_key(subrec)
+        subrec['count'] = counts[key]
+        sdates = dates.get(key)
+        if sdates is None:
+            pass
+        elif len(sdates) == 1:
+            subrec[_DATE_COL] = list(sdates)[0]
+        elif len(sdates) > 1:
+            subrec[_DATE_COL] = min(sdates) + "/" + max(sdates)
     return subrecs2
 
 
