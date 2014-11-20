@@ -4,9 +4,13 @@ Given a directory of nimrodel json output files,
 produce an HTML report
 """
 
+# it's hard to avoid this given the html reports we're handwriting
+# pylint: disable=too-many-locals
+
 
 from __future__ import print_function
-from collections import defaultdict
+from collections import defaultdict, Counter
+from itertools import chain
 from os import path as fp
 import argparse
 import codecs
@@ -122,7 +126,19 @@ def count_and_mean(fun, items):
     return (total, avg)
 
 
-_REPORT_CSS = ""
+_REPORT_CSS = """
+.navtable {
+    border-collapse: collapse;
+}
+
+.navtable td {
+    padding: 2px;
+    border-left: dotted 1px;
+    border-right: dotted 1px;
+    border-top: invisible;
+    border-bottom: invisible;
+}
+"""
 
 _SORTER_SCRIPT = """
 $(document).ready(function()
@@ -152,6 +168,8 @@ def mk_overview(ofile, records,
     our data
     """
 
+    odir = fp.dirname(ofile)
+
     htree = XHTML()
     hhead = htree.head
     _add_includes(hhead)
@@ -172,7 +190,16 @@ def mk_overview(ofile, records,
 
     def _add_stat(table, name, get_stat):
         "add a statistic to a count table"
-        cols = [name]
+        cols = []
+        hrow = table.tr()
+
+        # link to the attribute report if we have one
+        fname = "attr-" + name + ".html"
+        if fp.exists(fp.join(odir, fname)):
+            hrow.td.a(name, href=fname)
+        else:
+            cols.append(name)
+
         sum_aft, avg_aft = count_and_mean(get_stat, records.values())
         if records_before is not None:
             sum_bef, avg_bef = count_and_mean(get_stat, records_before.values())
@@ -187,7 +214,8 @@ def mk_overview(ofile, records,
             cols.append("{:.4}".format(avg_bef))
         cols.append("{:.4}".format(avg_aft))
 
-        _add_row(table, [], cols)
+        for col in cols:
+            _add_column(hrow, False, col)
 
 
     def get_num_attrs(items):
@@ -244,6 +272,96 @@ def mk_overview(ofile, records,
 
     with codecs.open(ofile, 'w', 'utf-8') as ofile:
         print(htree, file=ofile)
+
+# ---------------------------------------------------------------------
+# attributes report
+# ---------------------------------------------------------------------
+
+def mk_attribute_subreport(oprefix,
+                           all_attrs,
+                           attribute,
+                           counts):
+    """
+    Write a table showing the number of items each value for an
+    attribute occurs ::
+
+        (FilePath, [String], String, Counter String) -> IO ()
+
+    (the `all_attrs` is used for navigation; it lets us build
+    links to the other attributes)
+    """
+    def _add_header(thead):
+        "add a header to a count table"
+        cols = [u'value', u'count']
+        _add_row(thead, cols, [])
+
+    def _mk_fname(attr):
+        "filename for an attribute report"
+        return "{}-{}.html".format(oprefix, attr)
+
+    singletons = [k for k, v in counts.items() if v == 1]
+
+    htree = XHTML()
+    hhead = htree.head
+    _add_includes(hhead)
+    hhead.meta.style(_REPORT_CSS)
+
+    hbody = htree.body
+    hbody.h2(u'see also')
+
+    hnav = hbody.table(klass='navtable')
+    hnav_tr = hnav.tr
+    hnav_tr.td.a('overview', href='index.html')
+    hnav_tr.td
+    for attr in all_attrs:
+        if attr == attribute:
+            hnav_tr.td.span(attr)
+        else:
+            hnav_tr.td.a(attr,
+                         href=fp.basename(_mk_fname(attr)))
+
+    hbody.h2(u'values for ' + attribute)
+
+    hfactoids = hbody.ul
+    hfactoids.li(u'total values: {}'.format(sum(counts.values())))
+    hfactoids.li(u'unique values: {}'.format(len(counts.keys())))
+    hfactoids.li(u'singletons: {}'.format(len(singletons)))
+
+    hcounts = _add_report_table(hbody, fill_head=_add_header)
+
+    for value, num in sorted(counts.items(),
+                             key=lambda x: x[1], reverse=True):
+        _add_row(hcounts, [], [value, str(num)])
+
+    with codecs.open(_mk_fname(attribute), 'w', 'utf-8') as stream:
+        # not sure why I have to explicitly render the tree as
+        # unicode here and not elsewhere
+        print(unicode(htree), file=stream)
+
+
+def mk_attribute_reports(oprefix, records,
+                         records_before=None):
+    """
+    Write out reports for all reportable attributes.
+
+    Return a list of attributes covered (for future navigation) ::
+
+        (FilePath, Records, Records) -> IO [String]
+    """
+    censored = [u'origOccurrence', u'count', u'article'] + _OPTIONAL_COLS
+    colnames = [x for x in _get_colnames(records, records_before)
+                if x not in censored]
+    counts = defaultdict(Counter)
+    for srec in chain.from_iterable(records.values()):
+        for key, val in srec.items():
+            if key in colnames:
+                counts[key][val] += 1
+
+    for attr in colnames:
+        mk_attribute_subreport(oprefix, colnames, attr, counts[attr])
+
+    return colnames
+
 
 # ---------------------------------------------------------------------
 # tabular report
@@ -493,6 +611,11 @@ def main():
         records_before = None
         crecords_before = None
         drecords_before = None
+
+
+    mk_attribute_reports(fp.join(args.output, "attr"),
+                         drecords,
+                         records_before=drecords_before)
 
 
     mk_overview(rpath("index"),
