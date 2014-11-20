@@ -24,20 +24,20 @@ from html import XHTML
 # ---------------------------------------------------------------------
 
 # columns to emit in the report
-_PRIMARY_COL = 'origOccurrence'
-_DATE_COL = 'appearanceDate'
-_DATE_COL_MIN = 'appearanceDate (min)'
-_DATE_COL_MAX = 'appearanceDate (max)'
+_PRIMARY_COL = u'origOccurrence'
+_DATE_COL = u'appearanceDate'
+_DATE_COL_MIN = u'appearanceDate (min)'
+_DATE_COL_MAX = u'appearanceDate (max)'
 
 
 _DEFAULT_COLS = [_PRIMARY_COL,
-                 'count',
-                 'forename',
-                 'surname',
-                 'article',
-                 'title',
-                 'role',
-                 'provenance']
+                 u'count',
+                 u'forename',
+                 u'surname',
+                 u'article',
+                 u'title',
+                 u'role',
+                 u'provenance']
 
 _OPTIONAL_COLS = [_DATE_COL,
                   _DATE_COL_MIN,
