@@ -145,8 +145,8 @@ def _add_includes(hhead):
     hhead.script(_SORTER_SCRIPT)
 
 
-def _mk_overview(ofile, records,
-                 records_before=None):
+def mk_overview(ofile, records,
+                records_before=None):
     """
     Create an HTML report showing some useful numbers about
     our data
@@ -309,8 +309,8 @@ def _add_rowset(filename, colnames, htable, record,
         _add_report_row(colnames, htable, subrec)
 
 
-def _mk_report(ofile, records,
-               records_before=None):
+def mk_report(ofile, records,
+              records_before=None):
     """
     dictionary of records to html tree
     """
@@ -480,36 +480,36 @@ def main():
         crecords_before = _condense_records(records_before)
         drecords_before = {fp.basename(args.before):
                            _supercondense_record(records_before)}
-        _mk_report(fp.join(args.output, "report-before.html"),
-                   records_before)
-        _mk_report(fp.join(args.output, "report-after.html"),
-                   records)
-        _mk_report(fp.join(args.output, "condensed-before.html"),
-                   crecords_before)
-        _mk_report(fp.join(args.output, "condensed-after.html"),
-                   crecords)
-        _mk_report(fp.join(args.output, "single-before.html"),
-                   drecords_before)
-        _mk_report(fp.join(args.output, "single-after.html"),
-                   drecords)
+        mk_report(fp.join(args.output, "report-before.html"),
+                  records_before)
+        mk_report(fp.join(args.output, "report-after.html"),
+                  records)
+        mk_report(fp.join(args.output, "condensed-before.html"),
+                  crecords_before)
+        mk_report(fp.join(args.output, "condensed-after.html"),
+                  crecords)
+        mk_report(fp.join(args.output, "single-before.html"),
+                  drecords_before)
+        mk_report(fp.join(args.output, "single-after.html"),
+                  drecords)
     else:
         records_before = None
         crecords_before = None
         drecords_before = None
 
 
-    _mk_overview(fp.join(args.output, "index.html"),
-                 records,
-                 records_before=records_before)
-    _mk_report(fp.join(args.output, "report.html"),
-               records,
-               records_before=records_before)
-    _mk_report(fp.join(args.output, "condensed.html"),
-               crecords,
-               records_before=crecords_before)
-    _mk_report(fp.join(args.output, "single.html"),
-               drecords,
-               records_before=drecords_before)
+    mk_overview(fp.join(args.output, "index.html"),
+                records,
+                records_before=records_before)
+    mk_report(fp.join(args.output, "report.html"),
+              records,
+              records_before=records_before)
+    mk_report(fp.join(args.output, "condensed.html"),
+              crecords,
+              records_before=crecords_before)
+    mk_report(fp.join(args.output, "single.html"),
+              drecords,
+              records_before=drecords_before)
 
 
 main()
