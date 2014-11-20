@@ -2,6 +2,20 @@ These are mostly auxiliary scripts for converting source data (from some
 sort of TEI representation) to text, and for summarising the entity
 extraction results.
 
+## Installation
+
+It'd be a good idea to use a virtual environment :
+
+    virtualenv $HOME/.virtualenvs/ttt
+    source $HOME/.virtualenvs/bin/activate
+    pip install -r requirements.txt
+
+Note that when you want to run one of these scripts, you will need
+to activate your virtual environment first:
+
+    source $HOME/.virtualenvs/bin/activate
+
+
 ## Scripts
 
 ### Input to text
