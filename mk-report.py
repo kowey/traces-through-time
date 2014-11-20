@@ -474,40 +474,37 @@ def main():
                 _supercondense_record(records)}
 
     _copy_includes(args.output)
+
+    rpath = lambda f: fp.join(args.output, f + ".html")
+
     # if we're in diff mode
     if args.before:
         records_before = _norm_records(_read_inputs(args.before))
         crecords_before = _condense_records(records_before)
         drecords_before = {fp.basename(args.before):
                            _supercondense_record(records_before)}
-        mk_report(fp.join(args.output, "report-before.html"),
-                  records_before)
-        mk_report(fp.join(args.output, "report-after.html"),
-                  records)
-        mk_report(fp.join(args.output, "condensed-before.html"),
-                  crecords_before)
-        mk_report(fp.join(args.output, "condensed-after.html"),
-                  crecords)
-        mk_report(fp.join(args.output, "single-before.html"),
-                  drecords_before)
-        mk_report(fp.join(args.output, "single-after.html"),
-                  drecords)
+        mk_report(rpath("report-before"), records_before)
+        mk_report(rpath("report-after"), records)
+        mk_report(rpath("condensed-before"), crecords_before)
+        mk_report(rpath("condensed-after"), crecords)
+        mk_report(rpath("single-before"), drecords_before)
+        mk_report(rpath("single-after"), drecords)
     else:
         records_before = None
         crecords_before = None
         drecords_before = None
 
 
-    mk_overview(fp.join(args.output, "index.html"),
+    mk_overview(rpath("index"),
                 records,
                 records_before=records_before)
-    mk_report(fp.join(args.output, "report.html"),
+    mk_report(rpath("report"),
               records,
               records_before=records_before)
-    mk_report(fp.join(args.output, "condensed.html"),
+    mk_report(rpath("condensed"),
               crecords,
               records_before=crecords_before)
-    mk_report(fp.join(args.output, "single.html"),
+    mk_report(rpath("single"),
               drecords,
               records_before=drecords_before)
 
