@@ -181,10 +181,14 @@ def mk_overview(ofile, records,
         cols = ['']
         if records_before is not None:
             cols.append('before total')
-        cols.append('after total')
+            cols.append('after total')
+        else:
+            cols.append('total')
         if records_before is not None:
             cols.append('before mean')
-        cols.append('after mean')
+            cols.append('after mean')
+        else:
+            cols.append('mean')
         _add_row(thead, cols, [])
 
 
