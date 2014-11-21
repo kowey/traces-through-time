@@ -41,6 +41,11 @@ been renamed to 'state-papers' and 'fine-rolls' respectively
 * filter-names.py - narrow done a list of candidate names to those
   that look relatively likely to actually be names
 
+## Annotation
+
+* annotation-to-json.py - convert manual annotation to json
+* print-matches - just dump out occurrences from json dir
+
 ## See also
 
 * the [Henry III Fine Rolls][finerolls] project - where some of this
