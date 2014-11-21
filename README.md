@@ -44,7 +44,7 @@ been renamed to 'state-papers' and 'fine-rolls' respectively
 ## Annotation
 
 * annotation-to-json.py - convert manual annotation to json
-* print-matches - just dump out occurrences from json dir
+* print-matches.py - just dump out occurrences from json dir
 
 ## See also
 
