@@ -311,10 +311,71 @@ def mk_overview(ofile, records,
 # ---------------------------------------------------------------------
 
 
+def _add_attribute_factoids(hbody, counts_after, counts_before):
+    "add an overview to an attributes counts report"
+
+    def _add_factoid_header(thead):
+        """
+        Optional before vs. after header for the factoid table
+        """
+        if counts_before is not None:
+            cols = ['', 'before', 'after']
+            _add_row(thead, cols, [])
+
+    def _add_factoid(table, description, fun):
+        """
+        Append a factoid to the table
+
+        :: (Html, String, String -> Int) -> IO ()
+        """
+        cols = []
+        if counts_before is not None:
+            cols = [str(fun(counts_before)),
+                    str(fun(counts_after))]
+        else:
+            cols = [str(fun(counts_after))]
+        _add_row(table, [description], cols)
+
+    hfactoids = _add_report_table(hbody, fill_head=_add_factoid_header)
+    _add_factoid(hfactoids, 'total instances', lambda c: sum(c.values()))
+    _add_factoid(hfactoids, 'unique values', lambda c: len(c.keys()))
+    _add_factoid(hfactoids, 'singletons',
+                 lambda c: len([k for k, v in c.items() if v == 1]))
+
+
+def _add_attribute_counts(hbody, counts_after, counts_before):
+    """
+    add the actual counts (the meatist bit) to the attributes
+    counts table
+    """
+
+    def _add_header(thead):
+        "add a header to a count table"
+        if counts_before is None:
+            cols = [u'value', u'count']
+        else:
+            cols = [u'value', u'count before', u'count after']
+        _add_row(thead, cols, [])
+
+    hcounts = _add_report_table(hbody, fill_head=_add_header)
+
+    keys = sorted(frozenset(counts_after.keys()) |
+                  frozenset(counts_before.keys()),
+                  key=lambda x: counts_after.get(x, 0),
+                  reverse=True)
+    for key in keys:
+        cols = [key]
+        if counts_before is not None:
+            cols.append(unicode(counts_before.get(key, 0)))
+        cols.append(unicode(counts_after.get(key, 0)))
+        _add_row(hcounts, [], cols)
+
+
 def mk_attribute_subreport(oprefix,
                            all_attrs,
                            attribute,
-                           counts):
+                           counts_after,
+                           counts_before=None):
     """
     Write a table showing the number of items each value for an
     attribute occurs ::
@@ -324,16 +385,10 @@ def mk_attribute_subreport(oprefix,
     (the `all_attrs` is used for navigation; it lets us build
     links to the other attributes)
     """
-    def _add_header(thead):
-        "add a header to a count table"
-        cols = [u'value', u'count']
-        _add_row(thead, cols, [])
-
     def _mk_fname(attr):
         "filename for an attribute report"
         return "{}-{}.html".format(oprefix, attr)
 
-    singletons = [k for k, v in counts.items() if v == 1]
 
     htree = XHTML()
     hhead = htree.head
@@ -354,18 +409,12 @@ def mk_attribute_subreport(oprefix,
             hnav_tr.td.a(attr,
                          href=fp.basename(_mk_fname(attr)))
 
+
+    hbody.h2(u'overview of ' + attribute)
+    _add_attribute_factoids(hbody, counts_after, counts_before)
+
     hbody.h2(u'values for ' + attribute)
-
-    hfactoids = hbody.ul
-    hfactoids.li(u'total values: {}'.format(sum(counts.values())))
-    hfactoids.li(u'unique values: {}'.format(len(counts.keys())))
-    hfactoids.li(u'singletons: {}'.format(len(singletons)))
-
-    hcounts = _add_report_table(hbody, fill_head=_add_header)
-
-    for value, num in sorted(counts.items(),
-                             key=lambda x: x[1], reverse=True):
-        _add_row(hcounts, [], [value, str(num)])
+    _add_attribute_counts(hbody, counts_after, counts_before)
 
     _write_html(_mk_fname(attribute), htree)
 
@@ -379,17 +428,38 @@ def mk_attribute_reports(oprefix, records,
 
         (FilePath, Records, Records) -> IO [String]
     """
-    censored = [u'count', u'article'] + _OPTIONAL_COLS
+    censored = [u'origOccurence', u'count', u'article'] + _OPTIONAL_COLS
     colnames = [x for x in _get_colnames(records, records_before)
                 if x not in censored]
-    counts = defaultdict(Counter)
-    for srec in chain.from_iterable(records.values()):
-        for key, val in srec.items():
-            if key in colnames:
-                counts[key][val] += 1
+
+    def count(recs):
+        """
+        Counts for a given record set ::
+
+            Records -> Dict String (Counter String)
+        """
+        # force instantiate (instead of just using defaultdict)
+        # because we want to ensure we have a counter even if
+        # the key is not present (before/after may have diff attrs)
+        counts = {}
+        for key in colnames:
+            counts[key] = Counter()
+        for srec in chain.from_iterable(recs.values()):
+            for key, val in srec.items():
+                if key in colnames:
+                    counts[key][val] += 1
+        return counts
+
+    counts_after = count(records)
+    if records_before is None:
+        counts_before = {k:None for k in colnames}
+    else:
+        counts_before = count(records_before)
 
     for attr in colnames:
-        mk_attribute_subreport(oprefix, colnames, attr, counts[attr])
+        mk_attribute_subreport(oprefix, colnames, attr,
+                               counts_after[attr],
+                               counts_before[attr])
 
     return colnames
 
