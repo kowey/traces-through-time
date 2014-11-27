@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# vim:fileencoding=utf-8
 
 """
 Given a directory of nimrodel json output files,
@@ -28,6 +29,7 @@ import shutil
 from html import XHTML
 
 from ttt.cli import read_records
+from ttt.score import score_records, SCORE_KEYS
 
 # ---------------------------------------------------------------------
 # report format
@@ -141,6 +143,15 @@ def _add_row(table, headers, columns):
         _add_column(hrow, False, col)
     return hrow
 
+
+def _write_html(ofile, htree):
+    """
+    Write an HTML tree out
+    """
+    with codecs.open(ofile, 'wb', 'utf-8') as ofile:
+        ofile.write(unicode(htree))
+
+
 # ---------------------------------------------------------------------
 # overview
 # ---------------------------------------------------------------------
@@ -192,6 +203,35 @@ def get_num_instances(attr):
         non_empty = lambda d: 1 if d.get(attr) else 0
         return count(non_empty, items)
     return inner
+
+
+def _overview_add_toc(hbody, has_before):
+    """
+    Add a table of contents section to the overview report
+    """
+    def mk_report_block(rlist, descr, prefix):
+        """
+        append a bullet point to a list, pointing to
+        various subreports
+        """
+        item = rlist.li
+        item.a(descr, href=prefix+".html")
+        if has_before:
+            item.span(" (")
+            item.a("before", href=prefix+"-before.html")
+            item.span(" | ")
+            item.a("after", href=prefix+"-after.html")
+            item.span(")")
+
+    hbody.h2("reports")
+    rlist = hbody.ul
+    mk_report_block(rlist, "item by item", "report")
+    mk_report_block(rlist, "each file condensed", "condensed")
+    mk_report_block(rlist, "whole dir condensed", "single")
+    if has_before:
+        scores_li = rlist.li
+        scores_li.a('scores', href='scores.html')
+        scores_li.span(' (before = reference)')
 
 
 def mk_overview(ofile, records,
@@ -250,26 +290,7 @@ def mk_overview(ofile, records,
         for col in cols:
             _add_column(hrow, False, col)
 
-    def mk_report_block(rlist, descr, prefix):
-        """
-        append a bullet point to a list, pointing to
-        various subreports
-        """
-        item = rlist.li
-        item.a(descr, href=prefix+".html")
-        if records_before:
-            item.span(" (")
-            item.a("before", href=prefix+"-before.html")
-            item.span(" | ")
-            item.a("after", href=prefix+"-after.html")
-            item.span(")")
-
-    hbody.h2("reports")
-    rlist = hbody.ul
-    mk_report_block(rlist, "item by item", "report")
-    mk_report_block(rlist, "each file condensed", "condensed")
-    mk_report_block(rlist, "whole dir condensed", "single")
-
+    _overview_add_toc(hbody, records_before is not None)
     hbody.h2('general counts')
     htotals = _add_report_table(hbody, fill_head=_add_header)
     _add_stat(htotals, 'files', lambda _: 1)
@@ -283,8 +304,7 @@ def mk_overview(ofile, records,
     for attr in attrs:
         _add_stat(hattrs, attr, get_num_instances(attr))
 
-    with codecs.open(ofile, 'w', 'utf-8') as ofile:
-        print(htree, file=ofile)
+    _write_html(ofile, htree)
 
 # ---------------------------------------------------------------------
 # attributes report
@@ -347,10 +367,7 @@ def mk_attribute_subreport(oprefix,
                              key=lambda x: x[1], reverse=True):
         _add_row(hcounts, [], [value, str(num)])
 
-    with codecs.open(_mk_fname(attribute), 'w', 'utf-8') as stream:
-        # not sure why I have to explicitly render the tree as
-        # unicode here and not elsewhere
-        print(unicode(htree), file=stream)
+    _write_html(_mk_fname(attribute), htree)
 
 
 def mk_attribute_reports(oprefix, records,
@@ -362,7 +379,7 @@ def mk_attribute_reports(oprefix, records,
 
         (FilePath, Records, Records) -> IO [String]
     """
-    censored = [u'origOccurrence', u'count', u'article'] + _OPTIONAL_COLS
+    censored = [u'count', u'article'] + _OPTIONAL_COLS
     colnames = [x for x in _get_colnames(records, records_before)
                 if x not in censored]
     counts = defaultdict(Counter)
@@ -375,6 +392,52 @@ def mk_attribute_reports(oprefix, records,
         mk_attribute_subreport(oprefix, colnames, attr, counts[attr])
 
     return colnames
+
+
+# ---------------------------------------------------------------------
+# scoring report
+# ---------------------------------------------------------------------
+
+def mk_score_report(ofile, records_ref, records_tst):
+    """
+    Emit a scoring table, showing precision, recall, etc scores
+    for each file as well as an aggregrate score
+    """
+    agg_scores, indiv_scores =\
+        score_records(records_ref, records_tst)
+
+    htree = XHTML()
+    hhead = htree.head
+    _add_includes(hhead)
+    hhead.meta.style(_REPORT_CSS)
+
+    def _fmt_score(score):
+        "Float -> String"
+        if score is None:
+            return u'0 (N/A)'
+        else:
+            return u'{:.4}'.format(100. * score)
+
+    def _add_header(thead):
+        "add a header to a count table"
+        _add_row(thead, ['file'] + SCORE_KEYS, [])
+
+    def _flat_scores(scores):
+        "scores as list of columns"
+        return [_fmt_score(scores[x]) for x in SCORE_KEYS]
+
+    hbody = htree.body
+    hbody.h2(u'aggregate scores')
+    h_aggr = _add_report_table(hbody, fill_head=_add_header)
+    _add_row(h_aggr, [''], _flat_scores(agg_scores))
+
+    hbody.h2(u'individual scores')
+    h_indiv = _add_report_table(hbody, fill_head=_add_header)
+    for key in records_ref:
+        _add_row(h_indiv, [key],
+                 _flat_scores(indiv_scores[key]))
+
+    _write_html(ofile, htree)
 
 
 # ---------------------------------------------------------------------
@@ -460,8 +523,7 @@ def mk_report(ofile, records,
         record_after = records.get(fname, [])
         _add_rowset(fname, colnames, htable, record_after,
                     record_before=record_before)
-    with open(ofile, 'wb') as ofile:
-        ofile.write(unicode(htree).encode('utf-8'))
+    _write_html(ofile, htree)
 
 
 def _copy_includes(odir):
@@ -604,6 +666,8 @@ def main():
         mk_report(rpath("condensed-after"), crecords)
         mk_report(rpath("single-before"), drecords_before)
         mk_report(rpath("single-after"), drecords)
+        mk_score_report(rpath("scores"), records_before, records)
+
     else:
         records_before = None
         crecords_before = None
