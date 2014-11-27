@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 """
 Given a directory of nimrodel json output files,
 produce an HTML report
@@ -7,6 +8,10 @@ produce an HTML report
 # it's hard to avoid this given the html reports we're handwriting
 # pylint: disable=too-many-locals
 
+# pylint: disable=invalid-name
+# this is a script, not a module; we don't care about
+# its name being invalid
+# pylint: enable=invalid-name
 
 from __future__ import print_function
 from collections import defaultdict, Counter
@@ -16,12 +21,13 @@ import argparse
 import codecs
 import copy
 import itertools
-import json
 import glob
 import os
 import shutil
 
 from html import XHTML
+
+from ttt.cli import read_records
 
 # ---------------------------------------------------------------------
 # report format
@@ -46,6 +52,36 @@ _DEFAULT_COLS = [_PRIMARY_COL,
 _OPTIONAL_COLS = [_DATE_COL,
                   _DATE_COL_MIN,
                   _DATE_COL_MAX]
+
+
+# ---------------------------------------------------------------------
+# css and scripts
+# ---------------------------------------------------------------------
+
+
+_REPORT_CSS = """
+.navtable {
+    border-collapse: collapse;
+}
+
+.navtable td {
+    padding: 2px;
+    border-left: dotted 1px;
+    border-right: dotted 1px;
+    border-top: invisible;
+    border-bottom: invisible;
+}
+"""
+
+_SORTER_SCRIPT = """
+$(document).ready(function()
+    {
+        $(".report_table").tablesorter();
+    }
+);
+"""
+
+_BEFORE_STYLE = {'style': 'color:grey;'}
 
 # ---------------------------------------------------------------------
 # html helpers
@@ -110,6 +146,19 @@ def _add_row(table, headers, columns):
 # ---------------------------------------------------------------------
 
 
+def _add_includes(hhead):
+    """
+    Add javascript/css includes to the report
+    """
+    for scriptfile in glob.glob('js/*.js'):
+        hhead.script(type="text/javascript",
+                     src=unicode(scriptfile))
+    for stylefile in glob.glob('css/*.css'):
+        hhead.link(rel="stylesheet", type="text/css",
+                   href=unicode(stylefile))
+    hhead.script(_SORTER_SCRIPT)
+
+
 def count(fun, items):
     """
     (v -> int, [v]) -> int
@@ -126,39 +175,23 @@ def count_and_mean(fun, items):
     return (total, avg)
 
 
-_REPORT_CSS = """
-.navtable {
-    border-collapse: collapse;
-}
+def get_num_attrs(items):
+    "number of non-empty values for a list of dictionaries"
+    non_empty = lambda d: len([v for v in d.values() if v])
+    return count(non_empty, items)
 
-.navtable td {
-    padding: 2px;
-    border-left: dotted 1px;
-    border-right: dotted 1px;
-    border-top: invisible;
-    border-bottom: invisible;
-}
-"""
 
-_SORTER_SCRIPT = """
-$(document).ready(function()
-    {
-        $(".report_table").tablesorter();
-    }
-);
-"""
-
-def _add_includes(hhead):
+def get_num_instances(attr):
     """
-    Add javascript/css includes to the report
+    number of times an attribute is non empty ::
+
+        String -> [Dict String a] -> Int
     """
-    for scriptfile in glob.glob('js/*.js'):
-        hhead.script(type="text/javascript",
-                     src=unicode(scriptfile))
-    for stylefile in glob.glob('css/*.css'):
-        hhead.link(rel="stylesheet", type="text/css",
-                   href=unicode(stylefile))
-    hhead.script(_SORTER_SCRIPT)
+    def inner(items):
+        "[Dict String a] -> Int"
+        non_empty = lambda d: 1 if d.get(attr) else 0
+        return count(non_empty, items)
+    return inner
 
 
 def mk_overview(ofile, records,
@@ -182,15 +215,12 @@ def mk_overview(ofile, records,
         if records_before is not None:
             cols.append('before total')
             cols.append('after total')
-        else:
-            cols.append('total')
-        if records_before is not None:
             cols.append('before mean')
             cols.append('after mean')
         else:
+            cols.append('total')
             cols.append('mean')
         _add_row(thead, cols, [])
-
 
     def _add_stat(table, name, get_stat):
         "add a statistic to a count table"
@@ -204,41 +234,21 @@ def mk_overview(ofile, records,
         else:
             cols.append(name)
 
-        sum_aft, avg_aft = count_and_mean(get_stat, records.values())
+        sum_aft, avg_aft = count_and_mean(get_stat,
+                                          records.values())
         if records_before is not None:
-            sum_bef, avg_bef = count_and_mean(get_stat, records_before.values())
-        else:
-            sum_bef, avg_bef = -1, -1
-
-        if records_before is not None:
+            sum_bef, avg_bef = count_and_mean(get_stat,
+                                              records_before.values())
             cols.append(unicode(sum_bef))
-        cols.append(unicode(sum_aft))
-
-        if records_before is not None:
+            cols.append(unicode(sum_aft))
             cols.append("{:.4}".format(avg_bef))
-        cols.append("{:.4}".format(avg_aft))
+            cols.append("{:.4}".format(avg_aft))
+        else:
+            cols.append(unicode(sum_aft))
+            cols.append("{:.4}".format(avg_aft))
 
         for col in cols:
             _add_column(hrow, False, col)
-
-
-    def get_num_attrs(items):
-        "number of non-empty values for a list of dictionaries"
-        non_empty = lambda d: len([v for v in d.values() if v])
-        return count(non_empty, items)
-
-
-    def get_num_instances(attr):
-        """
-        str -> [dict] -> int
-        number of times an attribute is non empty
-        """
-        def inner(items):
-            "[dict] -> int"
-            non_empty = lambda d: 1 if d.get(attr) else 0
-            return count(non_empty, items)
-        return inner
-
 
     def mk_report_block(rlist, descr, prefix):
         """
@@ -253,7 +263,6 @@ def mk_overview(ofile, records,
             item.span(" | ")
             item.a("after", href=prefix+"-after.html")
             item.span(")")
-
 
     hbody.h2("reports")
     rlist = hbody.ul
@@ -280,6 +289,7 @@ def mk_overview(ofile, records,
 # ---------------------------------------------------------------------
 # attributes report
 # ---------------------------------------------------------------------
+
 
 def mk_attribute_subreport(oprefix,
                            all_attrs,
@@ -316,7 +326,7 @@ def mk_attribute_subreport(oprefix,
     hnav = hbody.table(klass='navtable')
     hnav_tr = hnav.tr
     hnav_tr.td.a('overview', href='index.html')
-    hnav_tr.td
+    hnav_tr.td()
     for attr in all_attrs:
         if attr == attribute:
             hnav_tr.td.span(attr)
@@ -388,8 +398,6 @@ def _get_colnames(records, records_before=None,
     optional = [x for x in _OPTIONAL_COLS if x in keyset]
     remainder = sorted(keyset - frozenset(default) - frozenset(optional))
     return default + optional + remainder
-
-_BEFORE_STYLE = {'style':'color:grey;'}
 
 
 def _add_report_row(colnames, htable, subrecord,
@@ -472,12 +480,12 @@ def _copy_includes(odir):
 
 def _subrec_key(subrec):
     """
-    Hashabel representation of a subrecord
+    Hashable representation of a subrecord
     """
     def tweak(pair):
         "adjust key values pairs"
-        k, v = pair
-        return (k, "-") if k == _DATE_COL else pair
+        key = pair[0]
+        return (key, "-") if key == _DATE_COL else pair
 
     return tuple(sorted(map(tweak, subrec.items())))
 
@@ -543,21 +551,6 @@ def _supercondense_record(records):
 # ---------------------------------------------------------------------
 
 
-def _read_inputs(inputdir):
-    """
-    Read input dir, return dictionary from filenames to json records
-    """
-    records = {}
-    for root, _, files in os.walk(inputdir):
-        for bname in files:
-            filename = fp.join(root, bname)
-            with open(filename) as ifile:
-                subrecs = json.load(ifile)
-                records[bname] = [subrecs]\
-                    if isinstance(subrecs, dict) else subrecs
-    return records
-
-
 def _norm_records(records):
     """
     Tidy up whitespace within records
@@ -588,7 +581,7 @@ def main():
         os.makedirs(args.output)
 
     # straightforward one row per json object
-    records = _norm_records(_read_inputs(args.input))
+    records = _norm_records(read_records(args.input))
     # squashed and sorted within each file
     crecords = _condense_records(records)
     # squashed and sorted altogether
@@ -601,7 +594,7 @@ def main():
 
     # if we're in diff mode
     if args.before:
-        records_before = _norm_records(_read_inputs(args.before))
+        records_before = _norm_records(read_records(args.before))
         crecords_before = _condense_records(records_before)
         drecords_before = {fp.basename(args.before):
                            _supercondense_record(records_before)}
@@ -616,12 +609,9 @@ def main():
         crecords_before = None
         drecords_before = None
 
-
     mk_attribute_reports(fp.join(args.output, "attr"),
                          drecords,
                          records_before=drecords_before)
-
-
     mk_overview(rpath("index"),
                 records,
                 records_before=records_before)
@@ -636,4 +626,5 @@ def main():
               records_before=drecords_before)
 
 
-main()
+if __name__ == '__main__':
+    main()

@@ -8,6 +8,7 @@ Helper functions for command-line tools
 from collections import namedtuple
 from os import path as fp
 import argparse
+import json
 import glob
 import os
 
@@ -60,3 +61,22 @@ def generic_main(cfg, on_file, args):
     for filename in glob.glob(fp.join(args.input, cfg.glob)):
         subpath = fp.basename(filename)
         on_file(args.input, args.output, subpath)
+
+# ---------------------------------------------------------------------
+# json outputs
+# ---------------------------------------------------------------------
+
+
+def read_records(inputdir):
+    """
+    Read input dir, return dictionary from filenames to json records
+    """
+    records = {}
+    for root, _, files in os.walk(inputdir):
+        for bname in files:
+            filename = fp.join(root, bname)
+            with open(filename) as ifile:
+                subrecs = json.load(ifile)
+                records[bname] = [subrecs]\
+                    if isinstance(subrecs, dict) else subrecs
+    return records
