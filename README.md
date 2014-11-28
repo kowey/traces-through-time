@@ -18,6 +18,21 @@ to activate your virtual environment first:
 
 ## Scripts
 
+### Annotation campaign
+
+* convert annotations to something comparable with nimrodel:
+
+     python annotations-to-json.py ANNOTATED-DIR HUMAN-JSON-DIR
+
+* see just the refs
+
+     python print-matches.py HUMAN-JSON-DIR SOME-TMP-DIR
+
+* run nimrodel, save the json output
+* generate report/scoring:
+
+     python mk-report.py --before HUMAN-JSONDIR HUMAN-JSON-DIR REPORT-DIR
+
 ### Input to text
 
 Note that in data distributions, you may see the names 'kleanthi'
