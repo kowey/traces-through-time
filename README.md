@@ -31,7 +31,7 @@ to activate your virtual environment first:
 * run nimrodel, save the json output
 * generate report/scoring:
 
-     python mk-report.py --before HUMAN-JSONDIR HUMAN-JSON-DIR REPORT-DIR
+     python mk-report.py --before HUMAN-JSONDIR NIMRODEL-JSON-DIR REPORT-DIR
 
 ### Input to text
 
