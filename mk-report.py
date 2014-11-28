@@ -226,7 +226,6 @@ def _overview_add_toc(hbody, has_before):
 
     hbody.h2("reports")
     rlist = hbody.ul
-    mk_report_block(rlist, "item by item", "report")
     mk_report_block(rlist, "each file condensed", "condensed")
     mk_report_block(rlist, "whole dir condensed", "single")
     if has_before:
@@ -742,8 +741,6 @@ def main():
         drecords_before = {fp.basename(args.before):
                            _supercondense_record(records_before)}
         with Torpor('making before/after per-file reports'):
-            mk_report(rpath("report-before"), records_before)
-            mk_report(rpath("report-after"), records)
             mk_report(rpath("condensed-before"), crecords_before)
             mk_report(rpath("condensed-after"), crecords)
         with Torpor('making before/after whole-dir reports'):
@@ -761,9 +758,6 @@ def main():
                              drecords,
                              records_before=drecords_before)
     with Torpor('making comparative per-file reports'):
-        mk_report(rpath("report"),
-                  records,
-                  records_before=records_before)
         mk_report(rpath("condensed"),
                   crecords,
                   records_before=crecords_before)
