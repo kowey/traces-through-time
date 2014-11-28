@@ -445,9 +445,10 @@ def mk_attribute_reports(oprefix, records,
         for key in colnames:
             counts[key] = Counter()
         for srec in chain.from_iterable(recs.values()):
+            incr = srec.get('count', 1)
             for key, val in srec.items():
                 if key in colnames:
-                    counts[key][val] += 1
+                    counts[key][val] += incr
         return counts
 
     counts_after = count(records)
