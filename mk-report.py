@@ -428,7 +428,7 @@ def mk_attribute_reports(oprefix, records,
 
         (FilePath, Records, Records) -> IO [String]
     """
-    censored = [u'origOccurence', u'count', u'article'] + _OPTIONAL_COLS
+    censored = [u'count', u'article'] + _OPTIONAL_COLS
     colnames = [x for x in _get_colnames(records, records_before)
                 if x not in censored]
 
