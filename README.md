@@ -20,13 +20,14 @@ to activate your virtual environment first:
 
 ### Annotation campaign
 
-* convert annotations to something comparable with nimrodel:
+* convert annotations to something comparable with nimrodel (takes text
+  with angle brackets, spits out json):
 
      python annotations-to-json.py ANNOTATED-DIR HUMAN-JSON-DIR
 
-* see just the refs
+* see just the refs (takes json, spits out just entities)
 
-     python print-matches.py HUMAN-JSON-DIR SOME-TMP-DIR
+     python print-entities.py SOME-JSON-DIR SOME-TEXT-DIR
 
 * run nimrodel, save the json output
 * generate report/scoring:
