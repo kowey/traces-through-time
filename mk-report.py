@@ -30,6 +30,7 @@ from html import XHTML
 
 from ttt.cli import read_records
 from ttt.score import score_records, SCORE_KEYS
+from ttt.torpor import Torpor
 
 # ---------------------------------------------------------------------
 # report format
@@ -468,14 +469,11 @@ def mk_attribute_reports(oprefix, records,
 # scoring report
 # ---------------------------------------------------------------------
 
-def mk_score_report(ofile, records_ref, records_tst):
-    """
-    Emit a scoring table, showing precision, recall, etc scores
-    for each file as well as an aggregrate score
-    """
-    agg_scores, indiv_scores =\
-        score_records(records_ref, records_tst)
 
+def _save_scores(ofile, agg_scores, indiv_scores, keys):
+    """
+    Actually generate the scoring table given the computed scores
+    """
     htree = XHTML()
     hhead = htree.head
     _add_includes(hhead)
@@ -503,12 +501,23 @@ def mk_score_report(ofile, records_ref, records_tst):
 
     hbody.h2(u'individual scores')
     h_indiv = _add_report_table(hbody, fill_head=_add_header)
-    for key in records_ref:
+    for key in keys:
         _add_row(h_indiv, [key],
                  _flat_scores(indiv_scores[key]))
 
     _write_html(ofile, htree)
 
+
+def mk_score_report(ofile, records_ref, records_tst):
+    """
+    Emit a scoring table, showing precision, recall, etc scores
+    for each file as well as an aggregrate score
+    """
+    with Torpor('computing scores'):
+        agg_scores, indiv_scores = \
+            score_records(records_ref, records_tst)
+    with Torpor('saving scores'):
+        _save_scores(ofile, agg_scores, indiv_scores, records_ref.keys())
 
 # ---------------------------------------------------------------------
 # tabular report
@@ -713,7 +722,8 @@ def main():
         os.makedirs(args.output)
 
     # straightforward one row per json object
-    records = _norm_records(read_records(args.input))
+    with Torpor('reading "after" records [{}]'.format(args.input)):
+        records = _norm_records(read_records(args.input))
     # squashed and sorted within each file
     crecords = _condense_records(records)
     # squashed and sorted altogether
@@ -726,16 +736,19 @@ def main():
 
     # if we're in diff mode
     if args.before:
-        records_before = _norm_records(read_records(args.before))
+        with Torpor('reading "before" records [{}]'.format(args.before)):
+            records_before = _norm_records(read_records(args.before))
         crecords_before = _condense_records(records_before)
         drecords_before = {fp.basename(args.before):
                            _supercondense_record(records_before)}
-        mk_report(rpath("report-before"), records_before)
-        mk_report(rpath("report-after"), records)
-        mk_report(rpath("condensed-before"), crecords_before)
-        mk_report(rpath("condensed-after"), crecords)
-        mk_report(rpath("single-before"), drecords_before)
-        mk_report(rpath("single-after"), drecords)
+        with Torpor('making before/after per-file reports'):
+            mk_report(rpath("report-before"), records_before)
+            mk_report(rpath("report-after"), records)
+            mk_report(rpath("condensed-before"), crecords_before)
+            mk_report(rpath("condensed-after"), crecords)
+        with Torpor('making before/after whole-dir reports'):
+            mk_report(rpath("single-before"), drecords_before)
+            mk_report(rpath("single-after"), drecords)
         mk_score_report(rpath("scores"), records_before, records)
 
     else:
@@ -743,21 +756,24 @@ def main():
         crecords_before = None
         drecords_before = None
 
-    mk_attribute_reports(fp.join(args.output, "attr"),
-                         drecords,
-                         records_before=drecords_before)
+    with Torpor('making attribute reports'):
+        mk_attribute_reports(fp.join(args.output, "attr"),
+                             drecords,
+                             records_before=drecords_before)
+    with Torpor('making comparative per-file reports'):
+        mk_report(rpath("report"),
+                  records,
+                  records_before=records_before)
+        mk_report(rpath("condensed"),
+                  crecords,
+                  records_before=crecords_before)
+    with Torpor('making comparative whole-dir reports'):
+        mk_report(rpath("single"),
+                  drecords,
+                  records_before=drecords_before)
     mk_overview(rpath("index"),
                 records,
                 records_before=records_before)
-    mk_report(rpath("report"),
-              records,
-              records_before=records_before)
-    mk_report(rpath("condensed"),
-              crecords,
-              records_before=crecords_before)
-    mk_report(rpath("single"),
-              drecords,
-              records_before=drecords_before)
 
 
 if __name__ == '__main__':
