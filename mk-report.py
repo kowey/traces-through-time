@@ -84,7 +84,7 @@ $(document).ready(function()
 );
 """
 
-_BEFORE_STYLE = {'style': 'color:grey;'}
+_BEFORE_STYLE = {'style': 'color:red;'}
 
 # ---------------------------------------------------------------------
 # html helpers
