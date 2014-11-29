@@ -608,8 +608,10 @@ def mk_report(ofile, records,
 def _copy_includes(odir):
     "copy the javascript/css files to output dir"
 
-    for src in ['js', 'css']:
-        dst = fp.join(odir, src)
+    script_dir = fp.dirname(fp.realpath(__file__))
+    for incdir in ['js', 'css']:
+        dst = fp.join(odir, incdir)
+        src = fp.join(script_dir, incdir)
         if not fp.exists(dst):
             shutil.copytree(src, dst)
 
