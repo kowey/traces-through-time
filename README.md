@@ -7,13 +7,13 @@ extraction results.
 It'd be a good idea to use a virtual environment :
 
     virtualenv $HOME/.virtualenvs/ttt
-    source $HOME/.virtualenvs/bin/activate
+    source $HOME/.virtualenvs/ttt/bin/activate
     pip install -r requirements.txt
 
 Note that when you want to run one of these scripts, you will need
 to activate your virtual environment first:
 
-    source $HOME/.virtualenvs/bin/activate
+    source $HOME/.virtualenvs/ttt/bin/activate
 
 
 ## Scripts
