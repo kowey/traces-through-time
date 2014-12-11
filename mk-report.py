@@ -428,7 +428,7 @@ def mk_attribute_reports(oprefix, records,
 
         (FilePath, Records, Records) -> IO [String]
     """
-    censored = [u'count', u'article'] + _OPTIONAL_COLS
+    censored = [u'count', u'article', u'ref'] + _OPTIONAL_COLS
     colnames = [x for x in _get_colnames(records, records_before)
                 if x not in censored]
 
@@ -665,6 +665,11 @@ def _condense_helper(subrecs):
             subrec[_DATE_COL_MAX] = max(sdates)
             if _DATE_COL in subrec:
                 del subrec[_DATE_COL]
+
+        # condensed output should not have references; otherwise, you
+        # defeat the condensing
+        if 'ref' in subrec:
+            del subrec['ref']
     return subrecs2
 
 
