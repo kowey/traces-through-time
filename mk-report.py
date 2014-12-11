@@ -162,10 +162,11 @@ def _add_includes(hhead):
     """
     Add javascript/css includes to the report
     """
-    for scriptfile in glob.glob('js/*.js'):
+    script_dir = fp.dirname(fp.realpath(__file__))
+    for scriptfile in glob.glob(fp.join(script_dir, 'js/*.js')):
         hhead.script(type="text/javascript",
                      src=unicode(scriptfile))
-    for stylefile in glob.glob('css/*.css'):
+    for stylefile in glob.glob(fp.join(script_dir, 'css/*.css')):
         hhead.link(rel="stylesheet", type="text/css",
                    href=unicode(stylefile))
     hhead.script(_SORTER_SCRIPT)
