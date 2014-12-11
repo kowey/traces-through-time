@@ -21,6 +21,7 @@ from ttt.cli import CliConfig, iodir_argparser, generic_main
 
 _BRACKET_RE = re.compile(r'men')
 
+_GATE_SUFFIX = '.gate'
 
 def mk_converter(input_format):
     """
@@ -36,6 +37,19 @@ def mk_converter(input_format):
     person_re = re.compile(r'<Person>(.*?)</Person>'
                            if input_format == 'gate' else
                            r'<(.*?)>')
+
+    def output_path(output_dir, subpath):
+        """
+        ::
+
+            (FilePath, FilePath) -> FilePath
+        """
+        bname = subpath
+        if input_format == 'gate' and subpath.endswith(_GATE_SUFFIX):
+            bname = subpath[:len(subpath) - len(_GATE_SUFFIX)]
+        return fp.join(output_dir, bname)
+
+
     def inner(input_dir, output_dir, subpath):
         """
         ::
@@ -43,7 +57,7 @@ def mk_converter(input_format):
             (FilePath, FilePath, FilePath) -> IO ()
         """
         ifilename = fp.join(input_dir, subpath)
-        ofilename = fp.join(output_dir, subpath)
+        ofilename = output_path(output_dir, subpath)
         with codecs.open(ifilename, 'r', 'utf-8') as istream:
             txt = istream.read()
             matches = person_re.findall(txt)
