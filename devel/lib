@@ -1,0 +1,14 @@
+# common variables shared by devel scripts
+
+# EDIT ME
+NIMRODEL_DIR=$HOME/UoB/nimrodel
+
+ANNOTATOR=eric
+NIMRODEL_MODEL=phrase
+REF_SYSTEMS="$ANNOTATOR gate"
+OLD_ROBOT="nimrodel-old"
+NEW_ROBOT="nimrodel-$NIMRODEL_MODEL"
+ROBOTS="$OLD_ROBOT $NEW_ROBOT"
+DATASETS="state-papers fine-rolls"
+
+# vim:set syntax=sh
