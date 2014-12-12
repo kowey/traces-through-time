@@ -16,57 +16,66 @@ to activate your virtual environment first:
     source $HOME/.virtualenvs/ttt/bin/activate
 
 
-## Scripts
+## Installed Scripts
 
-### Annotation campaign
+The following scripts are installed in your virtual environment
+when you run the above.
 
-* convert annotations to something comparable with nimrodel (takes text
-  with angle brackets, spits out json):
+### Input to text (converters)
 
-     python annotations-to-json.py ANNOTATED-DIR HUMAN-JSON-DIR
-
-* see just the refs (takes json, spits out just entities)
-
-     python print-entities.py SOME-JSON-DIR SOME-TEXT-DIR
-
-* run nimrodel, save the json output
-* generate report/scoring:
-
-     python mk-report.py --before HUMAN-JSONDIR NIMRODEL-JSON-DIR REPORT-DIR
-
-### Input to text
-
-Note that in data distributions, you may see the names 'kleanthi'
-and 'calendar' floating around.  Files with such names should have
-been renamed to 'state-papers' and 'fine-rolls' respectively
+There is a number of scripts in the converters directory that
+will be installed by the setup procedure above, for example:
 
 * state-papers-to-text.py
 * fine-rolls-to-text.py
 * petitions-to-text.py
 
+These all operate on the same principle: they read some input
+directory of files in various formats, and output a similarly
+structured directory with mostly plain text files that can be
+processed by nimrodel.
 
-### Post-processing results
+Note that in data distributions, you may see the names 'kleanthi' and
+'calendar' floating around.  Files with such names should have been
+renamed to 'state-papers' and 'fine-rolls' respectively
+
+### Post-processing results (evaluation)
 
 * mk-report.py (needs html package) - note that if you have two
   directories of results, you can pass one in with the '--before'
   flag to get a sort of informal regression report
+* print-entities.py - just dump out occurrences from json dir
 
-### Miscellaneous
+## One-off scripts
 
+Scripts in these directory were used for various one-off tasks
+that we don't think are that repeatable
+
+* annotations-to-json.py - convert manual annotation to json
 * fix-json.py
 * filter-names.py - narrow done a list of candidate names to those
   that look relatively likely to actually be names
 
-## Annotation
 
-* annotation-to-json.py - convert manual annotation to json
-* print-matches.py - just dump out occurrences from json dir
+## Annotation campaign notes
 
-## See also
+These notes are for a short-lived annotation campaign around 2014-11.
+We were marking up a small sample of texts for interesting spans
 
-* the [Henry III Fine Rolls][finerolls] project - where some of this
-  data comes from
-* [nimrodel][nimrodel] - our [DATR][datr]/ELF based entity extractor
+* convert annotations to something comparable with nimrodel (takes text
+  with angle brackets, spits out json):
+
+     python annotation/annotations-to-json.py ANNOTATED-DIR HUMAN-JSON-DIR
+
+* see just the refs (takes json, spits out just entities)
+
+     print-entities.py SOME-JSON-DIR SOME-TEXT-DIR
+
+* run nimrodel, save the json output
+* generate report/scoring:
+
+     mk-report.py --before HUMAN-JSONDIR NIMRODEL-JSON-DIR REPORT-DIR
+
 
 ## Tips
 
@@ -99,7 +108,10 @@ logging back in and looking at the `nohup.out` file from time to time.
 You can get a sense of the progress by counting the number of occurences
 of "^walking" that file, ie. the number of buckets processed.
 
+## See also
+
+* the [Henry III Fine Rolls][finerolls] project - where some of this
+  data comes from
 
 [finerolls]: http://www.finerollshenry3.org.uk/home.html
-[nimrodel]: https://github.com/kowey/nimrodel
 [datr]: http://www.datr.org.uk
