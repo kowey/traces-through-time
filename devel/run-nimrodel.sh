@@ -3,16 +3,18 @@
 DZERO=$(dirname "$0")
 pushd "$DZERO" > /dev/null
 SCRIPT_DIR=$PWD
+cd ..
+TTT_DIR=$PWD
 popd > /dev/null
 
+DATA_DIR="$TTT_DIR/GOLD/latest"
 source "$SCRIPT_DIR/lib"
 
-TTT_DIR="$SCRIPT_DIR/.."
-DATA_DIR="$TTT_DIR/GOLD/latest"
+bash "$NIMRODEL_DIR/bin/run-testsuite" > "$DATA_DIR/unit-tests-${NEW_ROBOT}.txt"
 
 for dataset in $DATASETS; do
     dataset_dir="$DATA_DIR/$dataset"
-    bash "$NIMRODEL_DIR/bin/nimrodel-on-dir"\
+    time bash "$NIMRODEL_DIR/bin/nimrodel-on-dir"\
         -model "$NIMRODEL_MODEL"\
         "$dataset_dir/unannotated"\
         "$dataset_dir/json-$NEW_ROBOT"

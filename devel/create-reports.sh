@@ -7,12 +7,12 @@
 DZERO=$(dirname "$0")
 pushd "$DZERO" > /dev/null
 SCRIPT_DIR=$PWD
+cd ..
+TTT_DIR=$PWD
 popd > /dev/null
 
-TTT_DIR="$SCRIPT_DIR"/..
-DATA_DIR="$TTT_DIR"/GOLD/latest
-
 source "$SCRIPT_DIR/lib"
+DATA_DIR="$TTT_DIR"/GOLD/latest
 
 mk_report () {
     dataset=$1

@@ -7,14 +7,17 @@
 DZERO=$(dirname "$0")
 pushd "$DZERO" > /dev/null
 SCRIPT_DIR=$PWD
+cd ..
+TTT_DIR=$PWD
 popd > /dev/null
 
-TTT_DIR="$SCRIPT_DIR"/..
 DATA_DIR="$TTT_DIR"/GOLD/latest
 source "$SCRIPT_DIR/lib"
 
 NEW=nimrodel-"$NIMRODEL_MODEL"
 OLD=nimrodel-old
+
+mv "$DATA_DIR/unit-tests-${NEW}.txt" "$DATA_DIR/unit-tests-${OLD}.txt"
 
 for dataset in $DATASETS; do
     dataset_dir="$DATA_DIR/$dataset"
