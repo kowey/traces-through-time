@@ -7,11 +7,11 @@ As background, we have a small amount of sample manually annotated data
 loop:
 
 1. hack on nimrodel a bit
-2. run nimrodel again
+2. run nimrodel again (./run-nimrodel.sh)
 3. generate a before and after report comparing results not just with
    the reference annotations but also with the latest saved results from
-   nimrodel
-4. if satisfied save the latest batch of results
+   nimrodel (done by script above)
+4. if satisfied save the latest batch of results (./mark-latest.sh)
 
 ## Setting this up
 
