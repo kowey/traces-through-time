@@ -1,0 +1,3 @@
+[submodule "nimrodel"]
+	path = nimrodel
+	url = https://github.com/kowey/nimrodel.git
