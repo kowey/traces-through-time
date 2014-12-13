@@ -7,7 +7,7 @@ ANNOTATOR=eric
 NIMRODEL_MODEL=phrase
 REF_SYSTEMS="$ANNOTATOR gate"
 OLD_ROBOT="nimrodel-old"
-NEW_ROBOT="nimrodel-$NIMRODEL_MODEL"
+NEW_ROBOT="nimrodel-new"
 ROBOTS="$OLD_ROBOT $NEW_ROBOT"
 DATASETS="state-papers fine-rolls"
 
