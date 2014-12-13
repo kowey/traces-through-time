@@ -4,7 +4,12 @@ extraction results.
 
 ## Installation
 
-It'd be a good idea to use a virtual environment :
+Fetch submodules for this project
+
+    git submodule init
+    git submodule update
+
+Set up a Python virtual environment:
 
     virtualenv $HOME/.virtualenvs/ttt
     source $HOME/.virtualenvs/ttt/bin/activate
