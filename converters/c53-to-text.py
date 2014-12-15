@@ -1,23 +1,23 @@
 #!/usr/bin/env python
+# pylint: disable=invalid-name
+# weird filename ok because not a module
+# pylint: enable=invalid-name
 
 """
 Strip any dateline [no date] elements from a Henry III
 fineroll XML file, along metadata and any other boring
 elements
 """
-
-
 from __future__ import print_function
 from os import path as fp
-import argparse
 import codecs
-import glob
 import math
 import os
 import sys
 import xml.etree.ElementTree as ET
 import re
 
+from ttt.cli import CliConfig, iodir_argparser, generic_main
 from ttt.date import read_date
 
 _MEMBRANE_BRACKETS = re.compile(r'\s*\((.*)\)')
@@ -26,6 +26,7 @@ _MEMBRANE_PUNCT = re.compile(r'[.:-]')
 # ---------------------------------------------------------------------
 #
 # ---------------------------------------------------------------------
+
 
 def _digits(items):
     "number of digits needed to represent the size of the given list"
@@ -108,20 +109,18 @@ def _write_items(tree, oprefix):
             _write_membrane(ntext, oprefix)
 
 
-def convert(ifile, odir):
+def convert(idir, odir, subpath):
     """
     read XML file, write tweaked XML file
     """
     # Is there a cleaner way to do this?
     try:
-        prefix = fp.basename(ifile)[:10]  # e.g. C53_p00177
-        tree = ET.parse(ifile)
+        prefix = subpath[:10]  # e.g. C53_p00177
+        tree = ET.parse(fp.join(idir, subpath))
         oprefix = fp.join(odir, prefix)
         if not fp.exists(oprefix):
             os.makedirs(oprefix)
         _write_items(tree, fp.join(oprefix, prefix))
-        #ET.ElementTree(tree).write(oprefix + ".xml",
-        #                           encoding='utf-8')
     except ET.ParseError as oops:
         # shrug
         print(oops, file=sys.stderr)
@@ -131,11 +130,12 @@ def main():
     """
     Read input dir, dump in output dir
     """
-    psr = argparse.ArgumentParser(description='TTT converter')
-    psr.add_argument('input', metavar='DIR', help='dir with xml files')
-    psr.add_argument('output', metavar='DIR', help='output directory')
+    cfg = CliConfig(description='C53 xml to text',
+                    input_description='XML files (via antiword)',
+                    glob='*.xml')
+    psr = iodir_argparser(cfg)
     args = psr.parse_args()
-    for ifile in glob.glob(fp.join(args.input, '*.xml')):
-        convert(ifile, args.output)
+    generic_main(cfg, convert, args)
 
-main()
+if __name__ == '__main__':
+    main()

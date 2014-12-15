@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+# pylint: disable=invalid-name
+# weird filename ok because not a module
+# pylint: enable=invalid-name
+
 
 """
 Extract natural language requests from SC8 petitions
@@ -15,16 +19,14 @@ of lexicon
 # TODO: extract petitioners, etc fields
 # TODO: endorsements
 
-
 from __future__ import print_function
 from os import path as fp
 from collections import namedtuple
-import argparse
 import codecs
-import glob
 import os
 import re
 
+from ttt.cli import CliConfig, iodir_argparser, generic_main
 
 _BLOCK_START = "Reference and Date"
 _TEXT_DIR = "text"
@@ -108,10 +110,11 @@ def save_petition(petition, odir):
         print("\n\n".join(lines), file=stream)
 
 
-def convert(ifile, odir):
+def convert(idir, odir, subpath):
     """
     read petitions file; write records
     """
+    ifile = fp.join(idir, subpath)
     with codecs.open(ifile, 'r', 'iso8859-1') as stream:
         block = []
         for line in stream.readlines():
@@ -127,11 +130,13 @@ def main():
     """
     Read input dir, dump in output dir
     """
-    psr = argparse.ArgumentParser(description='TTT petitions converter')
-    psr.add_argument('input', metavar='DIR', help='dir with .dat files')
-    psr.add_argument('output', metavar='DIR', help='output directory')
+    cfg = CliConfig(description='TTT petitions converter',
+                    input_description='.dat files',
+                    glob='*.dat')
+    psr = iodir_argparser(cfg)
     args = psr.parse_args()
-    for ifile in glob.glob(fp.join(args.input, '*.dat')):
-        convert(ifile, args.output)
+    generic_main(cfg, convert, args)
 
-main()
+
+if __name__ == '__main__':
+    main()

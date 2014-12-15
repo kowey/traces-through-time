@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+# pylint: disable=invalid-name
+# weird filename ok because not a module
+# pylint: enable=invalid-name
 
 """
 Squash marked up TTT Early Modern data from tabular format to
@@ -11,9 +14,7 @@ clever semantics into the whitespace.
 
 from __future__ import print_function
 from os import path as fp
-import argparse
 import codecs
-import glob
 import htmlentitydefs
 import itertools
 import math
@@ -21,6 +22,7 @@ import os
 import re
 import xml.etree.ElementTree as ET
 
+from ttt.cli import CliConfig, iodir_argparser, generic_main
 from ttt.date import read_date
 
 _OTHER_ENTITIES = {'emacr': 275,
@@ -94,10 +96,10 @@ def _convert_row(doc_date, xml):
         raise Exception("Did not expect more than one th node")
     else:
         th_text = _clean_date(ths[0].text or "")
-        date = read_date(th_text, prefix=doc_date, fuzzy=True) # or doc_date
+        date = read_date(th_text, prefix=doc_date, fuzzy=True)  # or doc_date
 
     columns = ths + tds
-    text = "\n".join(map(_column_to_text, columns))
+    text = "\n".join(_column_to_text(x) for x in columns)
     if text:
         return date or doc_date, text
     else:
@@ -136,6 +138,13 @@ def _convert_section(xml):
     return [_convert_row(section_date, r) for r in xml.iter('tr')]
 
 
+def concat_l(items):
+    """
+    :: Iterable (Iterable a) -> [a]
+    """
+    return list(itertools.chain.from_iterable(items))
+
+
 def convert(ifile):
     """
     Return a list of date, string tuples for each row in the table
@@ -148,12 +157,12 @@ def convert(ifile):
     # XML parser
     #
     # Is there a cleaner way to do this?
-    concat_map = lambda f, x: list(itertools.chain.from_iterable(map(f, x)))
     parser = ET.XMLParser(encoding='utf-8')
     with codecs.open(ifile, 'r', 'iso-8859-1') as fin:
         utext = unescape(fin.read()).encode('utf-8')
         tree = ET.fromstringlist([utext], parser=parser)
-        return concat_map(_convert_section, tree.findall('section'))
+        return concat_l(_convert_section(x)
+                        for x in tree.findall('section'))
 
 
 def _non_empty(row):
@@ -163,11 +172,12 @@ def _non_empty(row):
     return [x for x in row if x] if row else []
 
 
-def _do_file(text_dir, ifile):
+def _do_file(idir, text_dir, subpath):
     """
     Write converted output for a given file
     """
-    rows = list(map(_non_empty, convert(ifile)))
+    ifile = fp.join(idir, subpath)
+    rows = [_non_empty(x) for x in convert(ifile)]
     if not rows:
         return
     zwidth = int(math.floor(math.log10(len(rows)))) + 1
@@ -187,13 +197,13 @@ def main():
     """
     Read input dir, dump in output dir
     """
-    psr = argparse.ArgumentParser(description='TTT converter')
-    psr.add_argument('input', metavar='DIR', help='dir with xml files')
-    psr.add_argument('output', metavar='DIR', help='output directory')
+    cfg = CliConfig(description='state papers to text',
+                    input_description='XML files',
+                    glob='*.xml')
+    psr = iodir_argparser(cfg)
     args = psr.parse_args()
-    text_dir = fp.join(args.output)
-    for ifile in glob.glob(fp.join(args.input, '*.xml')):
-        _do_file(text_dir, ifile)
+    generic_main(cfg, _do_file, args)
 
 
-main()
+if __name__ == '__main__':
+    main()

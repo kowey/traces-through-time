@@ -1,19 +1,22 @@
 #!/usr/bin/env python
+# pylint: disable=invalid-name
+# weird filename ok because not a module
+# pylint: enable=invalid-name
 
 """
-Strip any dateline [no date] elements from a Henry III
-fineroll XML file, along metadata and any other boring
-elements
+Extract text from Henry III fineroll XML files.
+The resulting output may be split into a multitude of very
+small text snippets with one directory per roll.
 """
 
 
 from __future__ import print_function
 from os import path as fp
-import argparse
 import codecs
-import glob
 import os
 import xml.etree.ElementTree as ET
+
+from ttt.cli import CliConfig, iodir_argparser, generic_main
 
 # ---------------------------------------------------------------------
 #
@@ -62,13 +65,14 @@ def _write_items(tree, oprefix):
             print(text, file=ofile)
 
 
-def convert(ifile, odir):
+def convert(idir, odir, subpath):
     """
     read XML file, write tweaked XML file
     """
     # Is there a cleaner way to do this?
     parser = ET.XMLParser(encoding='utf-8')
-    prefix = fp.splitext(fp.basename(ifile))[0]
+    prefix = fp.splitext(subpath)[0]
+    ifile = fp.join(idir, subpath)
     with codecs.open(ifile, 'r', 'utf-8') as fin:
         utext = fin.read().encode('utf-8')
         tree = ET.fromstringlist([utext], parser=parser)
@@ -77,19 +81,19 @@ def convert(ifile, odir):
         if not fp.exists(oprefix):
             os.makedirs(oprefix)
         _write_items(tree, fp.join(oprefix, prefix))
-        #ET.ElementTree(tree).write(oprefix + ".xml",
-        #                           encoding='utf-8')
 
 
 def main():
     """
     Read input dir, dump in output dir
     """
-    psr = argparse.ArgumentParser(description='TTT converter')
-    psr.add_argument('input', metavar='DIR', help='dir with xml files')
-    psr.add_argument('output', metavar='DIR', help='output directory')
+    cfg = CliConfig(description='Fine Rolls xml to text',
+                    input_description='XML files (manually annotated TEI)',
+                    glob='roll*.xml')
+    psr = iodir_argparser(cfg)
     args = psr.parse_args()
-    for ifile in glob.glob(fp.join(args.input, 'roll*.xml')):
-        convert(ifile, args.output)
+    generic_main(cfg, convert, args)
 
-main()
+
+if __name__ == '__main__':
+    main()
