@@ -61,29 +61,6 @@ _OPTIONAL_COLS = [_DATE_COL,
 # css and scripts
 # ---------------------------------------------------------------------
 
-
-_REPORT_CSS = """
-.navtable {
-    border-collapse: collapse;
-}
-
-.navtable td {
-    padding: 2px;
-    border-left: dotted 1px;
-    border-right: dotted 1px;
-    border-top: invisible;
-    border-bottom: invisible;
-}
-"""
-
-_SORTER_SCRIPT = """
-$(document).ready(function()
-    {
-        $(".report_table").tablesorter();
-    }
-);
-"""
-
 _BEFORE_STYLE = {'style': 'color:red;'}
 
 # ---------------------------------------------------------------------
@@ -169,7 +146,6 @@ def _add_includes(hhead):
     for stylefile in glob.glob(fp.join(script_dir, 'css/*.css')):
         hhead.link(rel="stylesheet", type="text/css",
                    href=unicode(stylefile))
-    hhead.script(_SORTER_SCRIPT)
 
 
 def count(fun, items):
@@ -247,7 +223,6 @@ def mk_overview(ofile, records,
     htree = XHTML()
     hhead = htree.head
     _add_includes(hhead)
-    hhead.meta.style(_REPORT_CSS)
     hbody = htree.body
 
     def _add_header(thead):
@@ -394,7 +369,6 @@ def mk_attribute_subreport(oprefix,
     htree = XHTML()
     hhead = htree.head
     _add_includes(hhead)
-    hhead.meta.style(_REPORT_CSS)
 
     hbody = htree.body
     hbody.h2(u'see also')
@@ -478,7 +452,6 @@ def _save_scores(ofile, agg_scores, indiv_scores, keys):
     htree = XHTML()
     hhead = htree.head
     _add_includes(hhead)
-    hhead.meta.style(_REPORT_CSS)
 
     def _fmt_score(score):
         "Float -> String"

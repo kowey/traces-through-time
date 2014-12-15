@@ -1,0 +1,11 @@
+.navtable {
+    border-collapse: collapse;
+}
+
+.navtable td {
+    padding: 2px;
+    border-left: dotted 1px;
+    border-right: dotted 1px;
+    border-top: invisible;
+    border-bottom: invisible;
+}
