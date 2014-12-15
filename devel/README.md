@@ -19,5 +19,3 @@ loop:
 2. Extract the latest ttt-gold-YYYY-MM-DD.tar.bz file in it (you should
    thus have GOLD/ttt-gold-YYYY-MM-DD)
 3. Copy or rename that directory to GOLD/latest
-4. Edit the `lib` file and set the `NIMRODEL_DIR` accordingly (we assume
-   here you have already installed nimrodel)
