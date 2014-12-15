@@ -66,6 +66,7 @@ _OPTIONAL_COLS = [_DATE_COL,
 # ---------------------------------------------------------------------
 
 _BEFORE_STYLE = {'style': 'color:red;'}
+_HIDDEN_STYLE = {'style': 'visibility:hidden;'}
 
 # ---------------------------------------------------------------------
 # html helpers
@@ -520,8 +521,8 @@ def _get_colnames(records, records_before=None,
     return default + optional + remainder
 
 
-def _add_report_row(colnames, htable, subrecord,
-                    filename=None,
+def _add_report_row(colnames, htable, subrecord, filename,
+                    hide_filename=False,
                     is_before=False):
     """
     Populate a row with elements from a record
@@ -531,10 +532,55 @@ def _add_report_row(colnames, htable, subrecord,
     else:
         mk_content = lambda t: t
 
-    headers = [filename or ""]
+    if hide_filename:
+        headers = [(filename, _HIDDEN_STYLE)]
+    else:
+        headers = [filename]
+
     columns = [mk_content(unicode(subrecord.get(c, "")))
                for c in colnames]
     _add_row(htable, headers, columns)
+
+
+def _subrecords_by_occurrence(record):
+    """
+    Given a record (which is just a list of subrecords),
+    return a dictionary mapping occurence strings to
+    the subrecords that have them
+
+    :: [Subrecord] -> Dict String [Subrecord]
+    """
+    sdict = defaultdict(list)
+    for rec in record:
+        key = rec[_PRIMARY_COL]
+        sdict[key].append(rec)
+    return sdict
+
+
+def _diff_record(before, after):
+    """
+    Given two lists of records, return a dictionary that would
+    allow us to produce an interleaved diff-style comparison.
+
+    For now this is is very crude, we just want to list the
+    before/after records in an interleaved fashioned without
+    doing anything special like marking up missing fields etc.
+
+    To this end, we return a dictionary of pairs of subrecords.
+    No fancy manipulation. The dictionary is keyed on the
+    original occurence string. If one side or the other is
+    missing an entry for the key its list is empty.
+
+    :: -> Dict String ([Subrecord], [Subrecord])
+    """
+    s_before = _subrecords_by_occurrence(before)
+    s_after = _subrecords_by_occurrence(after)
+    keys = frozenset(s_before.keys() + s_after.keys())
+    res = {}
+    for key in keys:
+        res[key] = (s_before.get(key, []),
+                    s_after.get(key, []))
+    return res
 
 
 def _add_rowset(filename, colnames, htable, record,
@@ -542,21 +588,26 @@ def _add_rowset(filename, colnames, htable, record,
     """
     Add rows to the table, one for each subrecord
     """
-    record_after = record
+    hide_filename = False
     if record_before:
-        _add_report_row(colnames, htable, record_before[0],
-                        filename=filename,
-                        is_before=True)
-        for subrec in record_before[1:]:
-            _add_report_row(colnames, htable, subrec,
-                            is_before=True)
-    elif record:
-        _add_report_row(colnames, htable, record[0],
-                        filename=filename)
-        record_after = record[1:]
-
-    for subrec in record_after:
-        _add_report_row(colnames, htable, subrec)
+        combined = _diff_record(record_before, record)
+        for key in sorted(combined):
+            bef, aft = combined[key]
+            for subrec in bef:
+                _add_report_row(colnames, htable, subrec, filename,
+                                hide_filename=hide_filename,
+                                is_before=True)
+                hide_filename = True
+            for subrec in aft:
+                _add_report_row(colnames, htable, subrec, filename,
+                                hide_filename=hide_filename,
+                                is_before=False)
+                hide_filename = True
+    else:
+        for subrec in record:
+            _add_report_row(colnames, htable, subrec, filename,
+                            hide_filename=hide_filename)
+            hide_filename = True
 
 
 def mk_report(ofile, records,
@@ -566,10 +617,14 @@ def mk_report(ofile, records,
     """
     htree = XHTML()
     _add_includes(htree)
+    hbody = htree.body
+
+    if records_before:
+        hbody.span('Note: red text is for before/reference system')
 
     colnames = _get_colnames(records, records_before)
     mkcols = lambda h: _add_row(h, ['file'] + colnames, [])
-    htable = _add_report_table(htree.body,
+    htable = _add_report_table(hbody,
                                fill_head=mkcols)
 
     fnames = set(records.keys())
