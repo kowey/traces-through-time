@@ -41,7 +41,11 @@ _PRIMARY_COL = u'origOccurrence'
 _DATE_COL = u'appearanceDate'
 _DATE_COL_MIN = u'appearanceDate (min)'
 _DATE_COL_MAX = u'appearanceDate (max)'
+_REF_COL = u'ref'
 
+# ignored when condensing
+_CONDENSED_COLS = [_DATE_COL,
+                   _REF_COL]
 
 _DEFAULT_COLS = [_PRIMARY_COL,
                  u'count',
@@ -602,7 +606,7 @@ def _subrec_key(subrec):
     def tweak(pair):
         "adjust key values pairs"
         key = pair[0]
-        return (key, "-") if key == _DATE_COL else pair
+        return (key, "-") if key in _CONDENSED_COLS else pair
 
     return tuple(sorted(map(tweak, subrec.items())))
 
