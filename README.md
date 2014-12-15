@@ -4,10 +4,14 @@ extraction results.
 
 ## Installation
 
-Fetch submodules for this project
+Fetch this repository
 
-    git submodule init
-    git submodule update
+    git clone --recursive https://github.com/kowey/traces-through-time.git
+
+If you forgot to use the `--recursive` flag above, initialise the
+submodules
+
+    git submodule update --init --recursive
 
 Set up a Python virtual environment:
 
