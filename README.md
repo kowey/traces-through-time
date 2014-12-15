@@ -77,17 +77,22 @@ We were marking up a small sample of texts for interesting spans
 * convert annotations to something comparable with nimrodel (takes text
   with angle brackets, spits out json):
 
-      python annotation/annotations-to-json.py ANNOTATED-DIR HUMAN-JSON-DIR
+  ```
+  python annotation/annotations-to-json.py ANNOTATED-DIR HUMAN-JSON-DIR
+  ```
 
 * see just the refs (takes json, spits out just entities)
 
-      print-entities.py SOME-JSON-DIR SOME-TEXT-DIR
+  ```
+  print-entities.py SOME-JSON-DIR SOME-TEXT-DIR
+  ```
 
 * run nimrodel, save the json output
 * generate report/scoring:
 
-      mk-report.py --before HUMAN-JSONDIR NIMRODEL-JSON-DIR REPORT-DIR
-
+  ```
+  mk-report.py --before HUMAN-JSONDIR NIMRODEL-JSON-DIR REPORT-DIR
+  ```
 
 ## Tips
 
