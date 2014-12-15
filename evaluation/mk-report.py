@@ -552,7 +552,7 @@ def _subrecords_by_occurrence(record):
     """
     sdict = defaultdict(list)
     for rec in record:
-        key = rec[_PRIMARY_COL]
+        key = rec.get(_PRIMARY_COL, "")
         sdict[key].append(rec)
     return sdict
 
