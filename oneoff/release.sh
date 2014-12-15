@@ -27,7 +27,7 @@ WHITELIST="\
     ttt\
     "
 
-#git tag $TAG
+git tag $TAG
 
 # above the ttt directory
 cd ..
