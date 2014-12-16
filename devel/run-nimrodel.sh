@@ -14,8 +14,9 @@ bash "$NIMRODEL_DIR/bin/nimrodel" selftest > "$DATA_DIR/unit-tests-${NEW_ROBOT}.
 
 for dataset in $DATASETS; do
     dataset_dir="$DATA_DIR/$dataset"
-    time bash "$NIMRODEL_DIR/bin/nimrodel" dir\
+    time bash "$NIMRODEL_DIR/bin/nimrodel" parallel-dir\
         -model "$NIMRODEL_MODEL"\
+        $JOBS\
         "$dataset_dir/unannotated"\
         "$dataset_dir/json-$NEW_ROBOT"
 done

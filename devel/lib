@@ -9,4 +9,9 @@ NEW_ROBOT="nimrodel-new"
 ROBOTS="$OLD_ROBOT $NEW_ROBOT"
 DATASETS="state-papers fine-rolls"
 
+# how many processes to run simultaneously
+# (probably the same as the number of cores you have,
+# eg. 4 on a 2011 MacBook Air)
+JOBS=8
+
 # vim:set syntax=sh
