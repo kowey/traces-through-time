@@ -128,7 +128,7 @@ DATASET=traces-through-time/data/snippet-2014-11-14
 
 rm -f nohup.out
 mkdir -p "${DATASET}"/json
-nohup nimrodel/bin/parallel-nimrodel-on-dir 8\
+nohup nimrodel/bin/nimrodel parallel-dir 8\
         "${DATASET}"/text\
         "${DATASET}"/json &
 ```
