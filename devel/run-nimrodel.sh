@@ -10,11 +10,11 @@ popd > /dev/null
 DATA_DIR="$TTT_DIR/GOLD/latest"
 source "$SCRIPT_DIR/lib"
 
-bash "$NIMRODEL_DIR/bin/run-testsuite" > "$DATA_DIR/unit-tests-${NEW_ROBOT}.txt"
+bash "$NIMRODEL_DIR/bin/nimrodel" selftest > "$DATA_DIR/unit-tests-${NEW_ROBOT}.txt"
 
 for dataset in $DATASETS; do
     dataset_dir="$DATA_DIR/$dataset"
-    time bash "$NIMRODEL_DIR/bin/nimrodel-on-dir"\
+    time bash "$NIMRODEL_DIR/bin/nimrodel" dir\
         -model "$NIMRODEL_MODEL"\
         "$dataset_dir/unannotated"\
         "$dataset_dir/json-$NEW_ROBOT"
