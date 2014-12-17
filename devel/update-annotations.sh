@@ -9,8 +9,8 @@ cd ..
 TTT_DIR=$PWD
 popd > /dev/null
 
-source "$SCRIPT_DIR/lib"
-DATA_DIR="$TTT_DIR"/GOLD/latest
+source "$SCRIPT_DIR/env"
+DATA_DIR="$TTT_DIR"/GOLD/working
 
 for dataset in $DATASETS; do
     dataset_dir="$DATA_DIR/$dataset"

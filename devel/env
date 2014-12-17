@@ -1,6 +1,6 @@
 # common variables shared by devel scripts
 
-NIMRODEL_DIR=$TTT_DIR/nimrodel
+NIMRODEL_DIR=$TTT_DIR/../nimrodel
 ANNOTATOR=eric
 NIMRODEL_MODEL=phrase
 REF_SYSTEMS="$ANNOTATOR gate"

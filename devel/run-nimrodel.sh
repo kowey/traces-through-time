@@ -7,8 +7,8 @@ cd ..
 TTT_DIR=$PWD
 popd > /dev/null
 
-DATA_DIR="$TTT_DIR/GOLD/latest"
-source "$SCRIPT_DIR/lib"
+source "$SCRIPT_DIR/env"
+DATA_DIR="$TTT_DIR/GOLD/working"
 
 bash "$NIMRODEL_DIR/bin/nimrodel" selftest > "$DATA_DIR/unit-tests-${NEW_ROBOT}.txt"
 

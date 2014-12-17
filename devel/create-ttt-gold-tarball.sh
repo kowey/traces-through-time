@@ -12,14 +12,15 @@ cd ..
 TTT_DIR=$PWD
 popd > /dev/null
 
-DATA_DIR="$TTT_DIR"/GOLD/latest
-source "$SCRIPT_DIR/lib"
+source "$SCRIPT_DIR/env"
+DATA_DIR="$TTT_DIR"/GOLD/working
+DATA_BNAME=$(basename "$DATA_DIR")
 
 TODAY=$(date +%Y-%m-%d)
 pushd "$DATA_DIR/.." > /dev/null
 TARBALL_BNAME=ttt-gold-$TODAY
 rm -rf "$TARBALL_BNAME"
-mv latest "$TARBALL_BNAME"
+mv "$DATA_BNAME" "$TARBALL_BNAME"
 tar cjvf "${TARBALL_BNAME}.tar.bz" "$TARBALL_BNAME"
-mv "$TARBALL_BNAME" latest
+mv "$TARBALL_BNAME"  "$DATA_BNAME"
 popd > /dev/null
