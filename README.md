@@ -22,6 +22,8 @@ to activate your virtual environment first:
 
     source $HOME/.virtualenvs/ttt/bin/activate
 
+University of Brighton users: Follow on at
+[devel/README.md](devel/README.md)
 
 ## Installed Scripts
 
