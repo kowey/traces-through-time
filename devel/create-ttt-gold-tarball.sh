@@ -18,7 +18,7 @@ DATA_BNAME=$(basename "$DATA_DIR")
 
 # avoid including resource forks in the tarball
 # they confuse nimrodel
-COPYFILE_DISABLE=1
+export COPYFILE_DISABLE=1
 
 TODAY=$(date +%Y-%m-%d)
 pushd "$DATA_DIR/.." > /dev/null
