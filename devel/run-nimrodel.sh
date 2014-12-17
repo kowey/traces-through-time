@@ -35,5 +35,5 @@ bash "$SCRIPT_DIR/create-reports.sh"
 
 echo >&2 ""
 echo >&2 "Have a look at the reports in $DATA_DIR"
-echo >&2 "If you're happy, run $SCRIPT_DIR/mark-latest.sh"
+echo >&2 "If you're happy, run $SCRIPT_DIR/bless-results.sh"
 echo >&2 "So that these results will be used as the next baseline"
