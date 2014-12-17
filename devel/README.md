@@ -5,7 +5,7 @@ Scripts for the nimrodel development loop:
 1. Create the directory GOLD
 2. Extract the most recent ttt-gold-YYYY-MM-DD.tar.bz file in it
    (you should thus have GOLD/ttt-gold-YYYY-MM-DD)
-3. Copy or rename that directory to GOLD/working
+3. Rename that GOLD/ttt-gold-YYYY-MM-DD directory to GOLD/working
 
 ## Introduction
 
