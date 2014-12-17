@@ -16,6 +16,10 @@ source "$SCRIPT_DIR/env"
 DATA_DIR="$TTT_DIR"/GOLD/working
 DATA_BNAME=$(basename "$DATA_DIR")
 
+# avoid including resource forks in the tarball
+# they confuse nimrodel
+COPYFILE_DISABLE=1
+
 TODAY=$(date +%Y-%m-%d)
 pushd "$DATA_DIR/.." > /dev/null
 TARBALL_BNAME=ttt-gold-$TODAY
