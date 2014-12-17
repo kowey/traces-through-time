@@ -4,19 +4,14 @@ extraction results.
 
 ## Installation
 
-1. Fetch this repository
+1. Fetch this repository and nimrodel
 
-        git clone --recursive https://github.com/kowey/traces-through-time.git
+        git clone https://github.com/kowey/traces-through-time.git
+        git clone https://github.com/kowey/nimrodel.git
 
-2. If you forgot to use the `--recursive` flag above, initialise the
-   submodules
+2. Set up nimrodel (see nimrodel/README.md)
 
-        git submodule update --init --recursive
-
-3. Set up nimrodel (see nimrodel/README.md)
-
-
-4. Set up a Python virtual environment:
+3. Set up a Python virtual environment:
 
         virtualenv $HOME/.virtualenvs/ttt
         source $HOME/.virtualenvs/ttt/bin/activate
