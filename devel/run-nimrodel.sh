@@ -12,11 +12,21 @@ DATA_DIR="$TTT_DIR/GOLD/working"
 
 bash "$NIMRODEL_DIR/bin/nimrodel" selftest > "$DATA_DIR/unit-tests-${NEW_ROBOT}.txt"
 
+which parallel
+if [ $? -eq 0 ]; then
+    NIMRODEL_SUBCMD=parallel-dir
+    NIMRODEL_ARGS=$JOBS
+else
+    NIMRODEL_SUBCMD=dir
+    NIMRODEL_ARGS=
+fi
+
+
 for dataset in $DATASETS; do
     dataset_dir="$DATA_DIR/$dataset"
-    time bash "$NIMRODEL_DIR/bin/nimrodel" parallel-dir\
+    echo time bash "$NIMRODEL_DIR/bin/nimrodel" "$NIMRODEL_SUBCMD"\
         -model "$NIMRODEL_MODEL"\
-        $JOBS\
+        $NIMRODEL_ARGS\
         "$dataset_dir/unannotated"\
         "$dataset_dir/json-$NEW_ROBOT"
 done
