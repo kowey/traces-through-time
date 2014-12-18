@@ -23,6 +23,7 @@ loop:
      results with the reference manual annotations and the latest
      blessed results from nimrodel
 3. if satisfied save the latest batch of results (./bless-results.sh)
+4. If you want to view the HTML reports create the tarball (using create-ttt-gold-tarball.sh) and scp across to somewhere with a suitable browser.
 
 ## Tips
 
