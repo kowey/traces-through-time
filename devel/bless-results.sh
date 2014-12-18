@@ -14,7 +14,7 @@ popd > /dev/null
 source "$SCRIPT_DIR/env"
 DATA_DIR="$TTT_DIR"/GOLD/working
 
-#bash "$SCRIPT_DIR/create-ttt-gold-tarball.sh"
+bash "$SCRIPT_DIR/create-ttt-gold-tarball.sh"
 
 for dataset in $DATASETS; do
     dataset_dir="$DATA_DIR/$dataset"
