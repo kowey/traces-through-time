@@ -24,6 +24,12 @@ loop:
      blessed results from nimrodel
 3. if satisfied save the latest batch of results (./bless-results.sh)
 
+## Tips
+
+If you're running this infrastructure remotely and can't view the HTML
+reports, look at the entities-SYSTEM-NAME.txt files and the scores.txt
+file in the reports directories
+
 ## Adding/modifying data
 
 1. Update the DATASETS variable in env
