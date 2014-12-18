@@ -1,5 +1,7 @@
-
 #!/usr/bin/env python
+
+# pylint: disable=invalid-name
+# pylint: enable=invalid-name
 
 """
 Given a directory of annotated texts (where interesting
@@ -12,9 +14,9 @@ from __future__ import print_function
 from os import path as fp
 import codecs
 import json
-import re
+import os
 
-from ttt.cli import CliConfig, iodir_argparser, generic_main
+from ttt.cli import CliConfig, iodir_argparser, read_records
 
 
 def save_occurrences(input_dir, output_dir, subpath):
@@ -38,7 +40,12 @@ def main():
                     glob='*')
     psr = iodir_argparser(cfg)
     args = psr.parse_args()
-    generic_main(cfg, save_occurrences, args)
+    for root, _, files in os.walk(args.input):
+        oroot = fp.join(args.output, root[len(args.input):])
+        if not fp.exists(oroot):
+            os.makedirs(oroot)
+        for bname in files:
+            save_occurrences(root, oroot, bname)
 
 if __name__ == '__main__':
     main()
