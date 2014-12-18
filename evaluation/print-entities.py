@@ -28,7 +28,7 @@ def save_occurrences(input_dir, output_dir, subpath):
     ofilename = fp.join(output_dir, subpath)
     with open(ifilename, 'rb') as istream:
         jdicts = json.load(istream)
-        insts = [x['origOccurrence'] for x in jdicts]
+        insts = [x.get('origOccurrence', '') for x in jdicts]
         with codecs.open(ofilename, 'w', 'utf-8') as ostream:
             print("\n".join(insts), file=ostream)
 
@@ -40,8 +40,10 @@ def main():
                     glob='*')
     psr = iodir_argparser(cfg)
     args = psr.parse_args()
+    output_dir = args.output
     for root, _, files in os.walk(args.input):
-        oroot = fp.join(args.output, root[len(args.input):])
+        root_subpath = fp.relpath(root, args.input)
+        oroot = fp.join(output_dir, root_subpath)
         if not fp.exists(oroot):
             os.makedirs(oroot)
         for bname in files:
