@@ -28,6 +28,13 @@ mk_report () {
 
 for dataset in $DATASETS; do
     dataset_dir="$DATA_DIR/$dataset"
+    new="$dataset_dir/json-$NEW_ROBOT"
+    if [ ! -e "$new" ]; then
+        echo >&2 "There doesn't seem to be any new data."
+        echo >&2 "Have you run nimrodel?"
+        exit 1
+    fi
+ 
     for sys in $REF_SYSTEMS $ROBOTS; do
         # convenient entities list
         print-entities.py\
