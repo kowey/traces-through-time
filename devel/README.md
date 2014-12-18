@@ -23,3 +23,8 @@ loop:
      results with the reference manual annotations and the latest
      blessed results from nimrodel
 3. if satisfied save the latest batch of results (./bless-results.sh)
+
+## Adding/modifying data
+
+1. Update the DATASETS variable in env
+2. Run ./update-annotations.sh
