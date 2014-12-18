@@ -27,7 +27,7 @@ for dataset in $DATASETS; do
         exit 1
     fi
     rm -rf "$old"
-    mv "$new" "$old"
+    cp -R "$new" "$old"
 done
 
 mv "$DATA_DIR/unit-tests-${NEW_ROBOT}.txt" "$DATA_DIR/unit-tests-${OLD_ROBOT}.txt"
