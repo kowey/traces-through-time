@@ -12,7 +12,7 @@ DATA_DIR="$TTT_DIR/GOLD/working"
 
 bash "$NIMRODEL_DIR/bin/nimrodel" selftest > "$DATA_DIR/unit-tests-${NEW_ROBOT}.txt"
 
-which parallel
+which parallel > /dev/null
 if [ $? -eq 0 ]; then
     NIMRODEL_SUBCMD=parallel-dir
     NIMRODEL_ARGS=$JOBS

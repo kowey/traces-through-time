@@ -14,7 +14,7 @@ DATASETS="state-papers fine-rolls"
 # eg. 4 on a 2011 MacBook Air)
 JOBS=8
 
-which mk-report.py
+which mk-report.py > /dev/null
 if [ $? -ne 0 ]; then
     echo >&2 "Can't find mk-report.py"
     echo >&2 "Did you activate your virtual environement?"
