@@ -27,6 +27,17 @@ mk_report () {
 
 
 for dataset in $DATASETS; do
+    dataset_dir="$DATA_DIR/$dataset"
+    for sys in $REF_SYSTEMS $ROBOTS; do
+        # convenient entities list
+        print-entities.py\
+            "$dataset_dir/json-$sys"\
+            "$dataset_dir/entities-$sys"
+        cat "$dataset_dir/entities-$sys"/*\
+            | sort | uniq\
+            > "$dataset_dir/entities-$sys.txt"
+    done
+
     # compare all ref systems (eg. gate) against the human
     for ref in $REF_SYSTEMS $OLD_ROBOT; do
         if [ "$ref" != "$ANNOTATOR" ]; then
