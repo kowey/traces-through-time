@@ -484,6 +484,10 @@ def _save_scores(ofile, agg_scores, indiv_scores, keys):
         _add_row(h_indiv, [key],
                  _flat_scores(indiv_scores[key]))
 
+    with open(fp.splitext(ofile)[0] + '.txt', 'w') as tfile:
+        for key, val in zip(SCORE_KEYS, _flat_scores(agg_scores)):
+            print("{: <15}: {}".format(key, val), file=tfile)
+
     _write_html(ofile, htree)
 
 
