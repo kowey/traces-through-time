@@ -40,7 +40,7 @@ for dataset in $DATASETS; do
         print-entities.py\
             "$dataset_dir/json-$sys"\
             "$dataset_dir/entities-$sys"
-        cat "$dataset_dir/entities-$sys"/*\
+        find "$dataset_dir/entities-$sys" -type f -exec cat {} \;\
             | sort | uniq\
             > "$dataset_dir/entities-$sys.txt"
     done
