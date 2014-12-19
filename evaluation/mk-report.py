@@ -42,10 +42,12 @@ _DATE_COL = u'appearanceDate'
 _DATE_COL_MIN = u'appearanceDate (min)'
 _DATE_COL_MAX = u'appearanceDate (max)'
 _REF_COL = u'ref'
+_ID_COL = u'id'
 
 # ignored when condensing
 _CONDENSED_COLS = [_DATE_COL,
-                   _REF_COL]
+                   _REF_COL,
+                   _ID_COL]
 
 _DEFAULT_COLS = [_PRIMARY_COL,
                  u'count',
@@ -409,7 +411,7 @@ def mk_attribute_reports(oprefix, records,
 
         (FilePath, Records, Records) -> IO [String]
     """
-    censored = [u'count', u'article', u'ref'] + _OPTIONAL_COLS
+    censored = [u'count', u'article'] + _CONDENSED_COLS + _OPTIONAL_COLS
     colnames = [x for x in _get_colnames(records, records_before)
                 if x not in censored]
 
@@ -707,8 +709,11 @@ def _condense_helper(subrecs):
 
         # condensed output should not have references; otherwise, you
         # defeat the condensing
-        if 'ref' in subrec:
-            del subrec['ref']
+        if _REF_COL in subrec:
+            del subrec[_REF_COL]
+        if _ID_COL in subrec:
+            del subrec[_ID_COL]
+
     return subrecs2
 
 
