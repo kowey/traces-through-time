@@ -30,6 +30,8 @@ loop:
 If you're running this infrastructure remotely and can't view the HTML
 reports, look at the entities-SYSTEM-NAME.txt files and the scores.txt
 file in the reports directories
+e.g. to see how nimrodel's performance has changed (in terms of P & R) for a specific dataset, look at report-nimrodel-old-v-nimrodel-new/scores.txt
+And to compare the before & after scores try something like diff report-eric-v-nimrodel-{old,new}/scores.txt
 
 ## Adding/modifying data
 
