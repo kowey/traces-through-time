@@ -340,8 +340,9 @@ def _add_attribute_counts(hbody, counts_after, counts_before):
 
     hcounts = _add_report_table(hbody, fill_head=_add_header)
 
+    key_before = frozenset(counts_before.keys() if counts_before else [])
     keys = sorted(frozenset(counts_after.keys()) |
-                  frozenset(counts_before.keys()),
+                  key_before,
                   key=lambda x: counts_after.get(x, 0),
                   reverse=True)
     for key in keys:
