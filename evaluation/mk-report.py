@@ -650,8 +650,9 @@ def _copy_includes(odir):
         dst = fp.join(odir, incdir)
         src = fp.join(script_dir, incdir)
         if not fp.exists(dst):
-            shutil.copytree(src, dst)
-
+            os.makedirs(dst)
+        for src_file in glob.glob(fp.join(src, '*')):
+            shutil.copy(src_file, dst)
 
 # ---------------------------------------------------------------------
 # condensing
