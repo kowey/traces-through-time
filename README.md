@@ -48,6 +48,15 @@ Note that in data distributions, you may see the names 'kleanthi' and
 'calendar' floating around.  Files with such names should have been
 renamed to 'state-papers' and 'fine-rolls' respectively
 
+### Nimrodel
+
+Nimrodel provides a shell (or Windows batch) command that you can run.
+The script provides several modes, for example, `nimrodel string`
+takes a string on the command line for quick one-off tests, and
+`nimrodel dir` reads from an input directory, and writes to an output
+directory. The output of the latter will be a directory of json files.
+See [nimrodel][nimrodel] docs for more details.
+
 ### After nimrodel (study json output)
 
 When you have run nimrodel you should have a directory containing json
@@ -143,3 +152,4 @@ of "^walking" that file, ie. the number of buckets processed.
 
 [finerolls]: http://www.finerollshenry3.org.uk/home.html
 [datr]: http://www.datr.org.uk
+[nimrodel]: https://github.com/kowey/nimrodel
