@@ -2,7 +2,6 @@
 
 NIMRODEL_DIR=$TTT_DIR/../nimrodel
 ANNOTATOR=eric
-NIMRODEL_MODEL=phrase
 REF_SYSTEMS="$ANNOTATOR gate"
 OLD_ROBOT="nimrodel-old"
 NEW_ROBOT="nimrodel-new"

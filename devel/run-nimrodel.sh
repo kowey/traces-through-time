@@ -25,7 +25,6 @@ fi
 for dataset in $DATASETS; do
     dataset_dir="$DATA_DIR/$dataset"
     time bash "$NIMRODEL_DIR/bin/nimrodel" "$NIMRODEL_SUBCMD"\
-        -model "$NIMRODEL_MODEL"\
         $NIMRODEL_ARGS\
         "$dataset_dir/unannotated"\
         "$dataset_dir/json-$NEW_ROBOT"
