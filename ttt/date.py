@@ -63,11 +63,11 @@ def read_date(dstr, prefix=None, **kwargs):
     else:
         default1 = _DEFAULT_DATE_1
         default2 = _DEFAULT_DATE_2
-
+	
     try:
         stamp1 = dparse(dstr, default=default1, **kwargs)
         stamp2 = dparse(dstr, default=default2, **kwargs)
-    except TypeError as _:
+    except (TypeError, ValueError) as _:
         return None
 
     res = common_prefix(iso(stamp1), iso(stamp2))
